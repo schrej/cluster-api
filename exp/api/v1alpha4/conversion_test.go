@@ -19,7 +19,10 @@ package v1alpha4
 import (
 	"testing"
 
+	fuzz "github.com/google/gofuzz"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/apitesting/fuzzer"
+	runtimeserializer "k8s.io/apimachinery/pkg/runtime/serializer"
 	clusterv1exp "sigs.k8s.io/cluster-api/exp/api/v1beta1"
 	utilconversion "sigs.k8s.io/cluster-api/util/conversion"
 )
@@ -28,6 +31,29 @@ func TestFuzzyConversion(t *testing.T) {
 	t.Run("for MachinePool", utilconversion.FuzzTestFunc(utilconversion.FuzzTestFuncInput{
 		Hub:         &clusterv1exp.MachinePool{},
 		Spoke:       &MachinePool{},
-		FuzzerFuncs: []fuzzer.FuzzerFuncs{},
+		FuzzerFuncs: []fuzzer.FuzzerFuncs{MachinePoolFuzzFunc, ObjectReferenceFuzzFunc},
 	}))
+}
+
+func ObjectReferenceFuzzFunc(_ runtimeserializer.CodecFactory) []interface{} {
+	return []interface{}{
+		func(obj *corev1.ObjectReference, c fuzz.Continue) {
+			c.FuzzNoCustom(obj)
+
+			obj.FieldPath = ""
+			obj.ResourceVersion = ""
+			obj.UID = ""
+		},
+	}
+}
+
+func MachinePoolFuzzFunc(_ runtimeserializer.CodecFactory) []interface{} {
+	return []interface{}{
+		func(m *MachinePool, fuzzer fuzz.Continue) {
+			fuzzer.FuzzNoCustom(m)
+
+			setRefNamespace(&m.Spec.Template.Spec.InfrastructureRef, m.Namespace)
+			setRefNamespace(m.Spec.Template.Spec.Bootstrap.ConfigRef, m.Namespace)
+		},
+	}
 }

@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha3
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	apiconversion "k8s.io/apimachinery/pkg/conversion"
 	"sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/util/conditions"
@@ -311,4 +312,44 @@ func Convert_v1beta1_MachineDeploymentStatus_To_v1alpha3_MachineDeploymentStatus
 func Convert_v1alpha3_MachineStatus_To_v1beta1_MachineStatus(in *MachineStatus, out *v1beta1.MachineStatus, s apiconversion.Scope) error {
 	// Status.version has been removed in v1beta1, thus requiring custom conversion function. the information will be dropped.
 	return autoConvert_v1alpha3_MachineStatus_To_v1beta1_MachineStatus(in, out, s)
+}
+
+func Convert_v1beta1_Cluster_To_v1alpha3_Cluster(in *v1beta1.Cluster, out *Cluster, s apiconversion.Scope) error {
+	err := autoConvert_v1beta1_Cluster_To_v1alpha3_Cluster(in, out, s)
+	setRefNamespace(out.Spec.ControlPlaneRef, in.Namespace)
+	setRefNamespace(out.Spec.InfrastructureRef, in.Namespace)
+	return err
+}
+
+func Convert_v1beta1_Machine_To_v1alpha3_Machine(in *v1beta1.Machine, out *Machine, s apiconversion.Scope) error {
+	err := autoConvert_v1beta1_Machine_To_v1alpha3_Machine(in, out, s)
+	setRefNamespace(&out.Spec.InfrastructureRef, in.Namespace)
+	setRefNamespace(out.Spec.Bootstrap.ConfigRef, in.Namespace)
+	return err
+}
+
+func Convert_v1beta1_MachineDeployment_To_v1alpha3_MachineDeployment(in *v1beta1.MachineDeployment, out *MachineDeployment, s apiconversion.Scope) error {
+	err := autoConvert_v1beta1_MachineDeployment_To_v1alpha3_MachineDeployment(in, out, s)
+	setRefNamespace(&out.Spec.Template.Spec.InfrastructureRef, in.Namespace)
+	setRefNamespace(out.Spec.Template.Spec.Bootstrap.ConfigRef, in.Namespace)
+	return err
+}
+
+func Convert_v1beta1_MachineSet_To_v1alpha3_MachineSet(in *v1beta1.MachineSet, out *MachineSet, s apiconversion.Scope) error {
+	err := autoConvert_v1beta1_MachineSet_To_v1alpha3_MachineSet(in, out, s)
+	setRefNamespace(&out.Spec.Template.Spec.InfrastructureRef, in.Namespace)
+	setRefNamespace(out.Spec.Template.Spec.Bootstrap.ConfigRef, in.Namespace)
+	return err
+}
+
+func Convert_v1beta1_MachineHealthCheck_To_v1alpha3_MachineHealthCheck(in *v1beta1.MachineHealthCheck, out *MachineHealthCheck, s apiconversion.Scope) error {
+	err := autoConvert_v1beta1_MachineHealthCheck_To_v1alpha3_MachineHealthCheck(in, out, s)
+	setRefNamespace(out.Spec.RemediationTemplate, in.Namespace)
+	return err
+}
+
+func setRefNamespace(ref *corev1.ObjectReference, namespace string) {
+	if ref != nil {
+		ref.Namespace = namespace
+	}
 }

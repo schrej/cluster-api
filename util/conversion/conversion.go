@@ -28,7 +28,6 @@ import (
 	fuzz "github.com/google/gofuzz"
 	"github.com/onsi/gomega"
 	"github.com/pkg/errors"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/apitesting/fuzzer"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	metafuzzer "k8s.io/apimachinery/pkg/apis/meta/fuzzer"
@@ -56,7 +55,7 @@ var (
 // the Custom Resource Definition and looks which one is the stored version available.
 //
 // The object passed as input is modified in place if an updated compatible version is found.
-func UpdateReferenceAPIContract(ctx context.Context, c client.Client, ref *corev1.ObjectReference) error {
+func UpdateReferenceAPIContract(ctx context.Context, c client.Client, ref *clusterv1.ObjectReference) error {
 	log := ctrl.LoggerFrom(ctx)
 	gvk := ref.GroupVersionKind()
 

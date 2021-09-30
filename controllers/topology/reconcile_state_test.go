@@ -28,7 +28,6 @@ import (
 	"sigs.k8s.io/cluster-api/controllers/topology/internal/contract"
 	"sigs.k8s.io/cluster-api/controllers/topology/internal/scope"
 	"sigs.k8s.io/cluster-api/internal/builder"
-	. "sigs.k8s.io/cluster-api/internal/matchers"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -100,8 +99,8 @@ func TestReconcileCluster(t *testing.T) {
 			err = fakeClient.Get(ctx, client.ObjectKeyFromObject(tt.want), got)
 			g.Expect(err).ToNot(HaveOccurred())
 
-			g.Expect(got.Spec.InfrastructureRef).To(EqualObject(tt.want.Spec.InfrastructureRef))
-			g.Expect(got.Spec.ControlPlaneRef).To(EqualObject(tt.want.Spec.ControlPlaneRef))
+			g.Expect(got.Spec.InfrastructureRef).To(Equal(tt.want.Spec.InfrastructureRef))
+			g.Expect(got.Spec.ControlPlaneRef).To(Equal(tt.want.Spec.ControlPlaneRef))
 		})
 	}
 }
@@ -319,7 +318,7 @@ func TestReconcileControlPlaneObject(t *testing.T) {
 			}
 			if tt.class.InfrastructureMachineTemplate != nil {
 				s.Blueprint.ClusterClass.Spec.ControlPlane.MachineInfrastructure = &clusterv1.LocalObjectTemplate{
-					Ref: contract.ObjToRef(tt.class.InfrastructureMachineTemplate),
+					Ref: contract.ObjToRef(tt.class.InfrastructureMachineTemplate).LocalRef(),
 				}
 			}
 
@@ -750,7 +749,7 @@ func TestReconcileMachineDeployments(t *testing.T) {
 					g.Expect(gotMachineDeployment.Spec).To(Equal(wantMachineDeploymentState.Object.Spec))
 
 					// Compare BootstrapTemplate.
-					gotBootstrapTemplateRef := gotMachineDeployment.Spec.Template.Spec.Bootstrap.ConfigRef
+					gotBootstrapTemplateRef := gotMachineDeployment.Spec.Template.Spec.Bootstrap.ConfigRef.FullRef(gotMachineDeployment.Namespace)
 					gotBootstrapTemplate := unstructured.Unstructured{}
 					gotBootstrapTemplate.SetKind(gotBootstrapTemplateRef.Kind)
 					gotBootstrapTemplate.SetAPIVersion(gotBootstrapTemplateRef.APIVersion)
@@ -776,7 +775,7 @@ func TestReconcileMachineDeployments(t *testing.T) {
 					}
 
 					// Compare InfrastructureMachineTemplate.
-					gotInfrastructureMachineTemplateRef := gotMachineDeployment.Spec.Template.Spec.InfrastructureRef
+					gotInfrastructureMachineTemplateRef := gotMachineDeployment.Spec.Template.Spec.InfrastructureRef.FullRef(gotMachineDeployment.Namespace)
 					gotInfrastructureMachineTemplate := unstructured.Unstructured{}
 					gotInfrastructureMachineTemplate.SetKind(gotInfrastructureMachineTemplateRef.Kind)
 					gotInfrastructureMachineTemplate.SetAPIVersion(gotInfrastructureMachineTemplateRef.APIVersion)

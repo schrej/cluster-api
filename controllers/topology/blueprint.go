@@ -60,21 +60,29 @@ func (r *ClusterReconciler) getBlueprint(ctx context.Context, cluster *clusterv1
 	}()
 
 	// Get ClusterClass.spec.infrastructure.
-	blueprint.InfrastructureClusterTemplate, err = r.getReference(ctx, blueprint.ClusterClass.Spec.Infrastructure.Ref)
+	var infraRef *clusterv1.ObjectReference
+	if blueprint.ClusterClass.Spec.Infrastructure.Ref != nil {
+		infraRef = blueprint.ClusterClass.Spec.Infrastructure.Ref.FullRef(blueprint.ClusterClass.Namespace)
+	}
+	blueprint.InfrastructureClusterTemplate, err = r.getReference(ctx, infraRef)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get infrastructure cluster template for %s", tlog.KObj{Obj: blueprint.ClusterClass})
 	}
 
 	// Get ClusterClass.spec.controlPlane.
 	blueprint.ControlPlane = &scope.ControlPlaneBlueprint{}
-	blueprint.ControlPlane.Template, err = r.getReference(ctx, blueprint.ClusterClass.Spec.ControlPlane.Ref)
+	var cpRef *clusterv1.ObjectReference
+	if blueprint.ClusterClass.Spec.ControlPlane.Ref != nil {
+		cpRef = blueprint.ClusterClass.Spec.ControlPlane.Ref.FullRef(blueprint.ClusterClass.Namespace)
+	}
+	blueprint.ControlPlane.Template, err = r.getReference(ctx, cpRef)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get control plane template for %s", tlog.KObj{Obj: blueprint.ClusterClass})
 	}
 
 	// If the clusterClass mandates the controlPlane has infrastructureMachines, read it.
 	if blueprint.HasControlPlaneInfrastructureMachine() {
-		blueprint.ControlPlane.InfrastructureMachineTemplate, err = r.getReference(ctx, blueprint.ClusterClass.Spec.ControlPlane.MachineInfrastructure.Ref)
+		blueprint.ControlPlane.InfrastructureMachineTemplate, err = r.getReference(ctx, blueprint.ClusterClass.Spec.ControlPlane.MachineInfrastructure.Ref.FullRef(blueprint.ClusterClass.Namespace))
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to get control plane's machine template for %s", tlog.KObj{Obj: blueprint.ClusterClass})
 		}
@@ -91,13 +99,13 @@ func (r *ClusterReconciler) getBlueprint(ctx context.Context, cluster *clusterv1
 		machineDeploymentClass.Template.Metadata.DeepCopyInto(&machineDeploymentBlueprint.Metadata)
 
 		// Get the infrastructure machine template.
-		machineDeploymentBlueprint.InfrastructureMachineTemplate, err = r.getReference(ctx, machineDeploymentClass.Template.Infrastructure.Ref)
+		machineDeploymentBlueprint.InfrastructureMachineTemplate, err = r.getReference(ctx, machineDeploymentClass.Template.Infrastructure.Ref.FullRef(blueprint.ClusterClass.Namespace))
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to get infrastructure machine template for %s, MachineDeployment class %q", tlog.KObj{Obj: blueprint.ClusterClass}, machineDeploymentClass.Class)
 		}
 
 		// Get the bootstrap machine template.
-		machineDeploymentBlueprint.BootstrapTemplate, err = r.getReference(ctx, machineDeploymentClass.Template.Bootstrap.Ref)
+		machineDeploymentBlueprint.BootstrapTemplate, err = r.getReference(ctx, machineDeploymentClass.Template.Bootstrap.Ref.FullRef(blueprint.ClusterClass.Namespace))
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to get bootstrap machine template for %s, MachineDeployment class %q", tlog.KObj{Obj: blueprint.ClusterClass}, machineDeploymentClass.Class)
 		}

@@ -21,11 +21,11 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apiserver/pkg/storage/names"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/controllers/topology/internal/check"
 	"sigs.k8s.io/cluster-api/controllers/topology/internal/contract"
 	tlog "sigs.k8s.io/cluster-api/controllers/topology/internal/log"
@@ -207,7 +207,7 @@ func (r *ClusterReconciler) updateMachineDeployment(ctx context.Context, cluster
 
 	ctx, _ = log.WithObject(desiredMD.InfrastructureMachineTemplate).Into(ctx)
 	if _, err := r.reconcileReferencedTemplate(ctx, reconcileReferencedTemplateInput{
-		ref:                  &desiredMD.Object.Spec.Template.Spec.InfrastructureRef,
+		ref:                  desiredMD.Object.Spec.Template.Spec.InfrastructureRef.FullRef(desiredMD.Object.Namespace),
 		current:              currentMD.InfrastructureMachineTemplate,
 		desired:              desiredMD.InfrastructureMachineTemplate,
 		templateNamePrefix:   infrastructureMachineTemplateNamePrefix(clusterName, mdTopologyName),
@@ -218,7 +218,7 @@ func (r *ClusterReconciler) updateMachineDeployment(ctx context.Context, cluster
 
 	ctx, _ = log.WithObject(desiredMD.BootstrapTemplate).Into(ctx)
 	if _, err := r.reconcileReferencedTemplate(ctx, reconcileReferencedTemplateInput{
-		ref:                  desiredMD.Object.Spec.Template.Spec.Bootstrap.ConfigRef,
+		ref:                  desiredMD.Object.Spec.Template.Spec.Bootstrap.ConfigRef.FullRef(desiredMD.Object.Namespace),
 		current:              currentMD.BootstrapTemplate,
 		desired:              desiredMD.BootstrapTemplate,
 		templateNamePrefix:   bootstrapTemplateNamePrefix(clusterName, mdTopologyName),
@@ -322,7 +322,7 @@ func (r *ClusterReconciler) reconcileReferencedObject(ctx context.Context, curre
 }
 
 type reconcileReferencedTemplateInput struct {
-	ref                  *corev1.ObjectReference
+	ref                  *clusterv1.ObjectReference
 	current              *unstructured.Unstructured
 	desired              *unstructured.Unstructured
 	templateNamePrefix   string

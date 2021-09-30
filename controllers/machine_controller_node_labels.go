@@ -37,7 +37,7 @@ func (r *MachineReconciler) reconcileInterruptibleNodeLabel(ctx context.Context,
 	}
 
 	// Get the infrastructure object
-	infra, err := external.Get(ctx, r.Client, &machine.Spec.InfrastructureRef, machine.Namespace)
+	infra, err := external.Get(ctx, r.Client, machine.Spec.InfrastructureRef.FullRef(machine.Namespace))
 	if err != nil {
 		return ctrl.Result{}, err
 	}

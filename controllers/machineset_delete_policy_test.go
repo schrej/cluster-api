@@ -20,7 +20,6 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	capierrors "sigs.k8s.io/cluster-api/errors"
@@ -29,7 +28,7 @@ import (
 func TestMachineToDelete(t *testing.T) {
 	msg := "something wrong with the machine"
 	now := metav1.Now()
-	nodeRef := &corev1.ObjectReference{Name: "some-node"}
+	nodeRef := &clusterv1.PinnedObjectReference{Name: "some-node"}
 	healthyMachine := &clusterv1.Machine{Status: clusterv1.MachineStatus{NodeRef: nodeRef}}
 	mustDeleteMachine := &clusterv1.Machine{
 		ObjectMeta: metav1.ObjectMeta{DeletionTimestamp: &now},
@@ -188,7 +187,7 @@ func TestMachineToDelete(t *testing.T) {
 func TestMachineNewestDelete(t *testing.T) {
 	currentTime := metav1.Now()
 	statusError := capierrors.MachineStatusError("I'm unhealthy!")
-	nodeRef := &corev1.ObjectReference{Name: "some-node"}
+	nodeRef := &clusterv1.PinnedObjectReference{Name: "some-node"}
 	mustDeleteMachine := &clusterv1.Machine{
 		ObjectMeta: metav1.ObjectMeta{DeletionTimestamp: &currentTime},
 		Status:     clusterv1.MachineStatus{NodeRef: nodeRef},
@@ -290,7 +289,7 @@ func TestMachineNewestDelete(t *testing.T) {
 func TestMachineOldestDelete(t *testing.T) {
 	currentTime := metav1.Now()
 	statusError := capierrors.MachineStatusError("I'm unhealthy!")
-	nodeRef := &corev1.ObjectReference{Name: "some-node"}
+	nodeRef := &clusterv1.PinnedObjectReference{Name: "some-node"}
 	empty := &clusterv1.Machine{
 		Status: clusterv1.MachineStatus{NodeRef: nodeRef},
 	}

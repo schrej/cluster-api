@@ -1709,7 +1709,7 @@ func newMachine(cluster *clusterv1.Cluster, name, namespace string) *clusterv1.M
 		},
 		Spec: clusterv1.MachineSpec{
 			Bootstrap: clusterv1.Bootstrap{
-				ConfigRef: &corev1.ObjectReference{
+				ConfigRef: &clusterv1.LocalObjectReference{
 					Kind:       "KubeadmConfig",
 					APIVersion: bootstrapv1.GroupVersion.String(),
 				},
@@ -1751,7 +1751,7 @@ func newMachinePool(cluster *clusterv1.Cluster, name, namespace string) *expv1.M
 			Template: clusterv1.MachineTemplateSpec{
 				Spec: clusterv1.MachineSpec{
 					Bootstrap: clusterv1.Bootstrap{
-						ConfigRef: &corev1.ObjectReference{
+						ConfigRef: &clusterv1.LocalObjectReference{
 							Kind:       "KubeadmConfig",
 							APIVersion: bootstrapv1.GroupVersion.String(),
 						},
@@ -1796,7 +1796,6 @@ func newKubeadmConfig(machine *clusterv1.Machine, name, namespace string) *boots
 			},
 		}
 		machine.Spec.Bootstrap.ConfigRef.Name = config.Name
-		machine.Spec.Bootstrap.ConfigRef.Namespace = config.Namespace
 	}
 	return config
 }
@@ -1847,7 +1846,6 @@ func newMachinePoolKubeadmConfig(machinePool *expv1.MachinePool, name string) *b
 			},
 		}
 		machinePool.Spec.Template.Spec.Bootstrap.ConfigRef.Name = config.Name
-		machinePool.Spec.Template.Spec.Bootstrap.ConfigRef.Namespace = config.Namespace
 	}
 	return config
 }

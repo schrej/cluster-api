@@ -1235,7 +1235,7 @@ func TestMachineHealthCheck_Reconcile(t *testing.T) {
 						Bootstrap: clusterv1.Bootstrap{
 							DataSecretName: pointer.StringPtr("test-data-secret-name"),
 						},
-						InfrastructureRef: corev1.ObjectReference{
+						InfrastructureRef: clusterv1.LocalObjectReference{
 							APIVersion: "infrastructure.cluster.x-k8s.io/v1beta1",
 							Kind:       "GenericInfrastructureMachineTemplate",
 							Name:       infraTmpl.GetName(),
@@ -1479,7 +1479,7 @@ func TestMachineHealthCheck_Reconcile(t *testing.T) {
 		infraRemediationTmpl.SetNamespace(cluster.Namespace)
 		g.Expect(env.Create(ctx, infraRemediationTmpl)).To(Succeed())
 
-		remediationTemplate := &corev1.ObjectReference{
+		remediationTemplate := &clusterv1.LocalObjectReference{
 			APIVersion: builder.RemediationGroupVersion.String(),
 			Kind:       "GenericExternalRemediationTemplate",
 			Name:       infraRemediationTmpl.GetName(),
@@ -1579,7 +1579,7 @@ func TestMachineHealthCheck_Reconcile(t *testing.T) {
 			return
 		}).Should(Equal(1))
 
-		ref := corev1.ObjectReference{
+		ref := clusterv1.ObjectReference{
 			APIVersion: builder.RemediationGroupVersion.String(),
 			Kind:       "GenericExternalRemediation",
 		}
@@ -1627,7 +1627,7 @@ func TestMachineHealthCheck_Reconcile(t *testing.T) {
 		infraRemediationTmpl.SetNamespace(cluster.Namespace)
 		g.Expect(env.Create(ctx, infraRemediationTmpl)).To(Succeed())
 
-		remediationTemplate := &corev1.ObjectReference{
+		remediationTemplate := &clusterv1.LocalObjectReference{
 			APIVersion: builder.RemediationGroupVersion.String(),
 			Kind:       "GenericExternalRemediationTemplate",
 			Name:       infraRemediationTmpl.GetName(),
@@ -1778,7 +1778,7 @@ func TestMachineHealthCheck_Reconcile(t *testing.T) {
 			return
 		}).Should(Equal(0))
 
-		ref := corev1.ObjectReference{
+		ref := clusterv1.ObjectReference{
 			APIVersion: builder.RemediationGroupVersion.String(),
 			Kind:       "GenericExternalRemediation",
 		}
@@ -2420,7 +2420,7 @@ func createMachinesWithNodes(
 		g.Expect(unstructured.SetNestedField(infraMachine.Object, true, "status", "ready")).To(Succeed())
 		g.Expect(env.Status().Patch(ctx, infraMachine, infraMachinePatch)).To(Succeed())
 
-		machine.Spec.InfrastructureRef = corev1.ObjectReference{
+		machine.Spec.InfrastructureRef = clusterv1.LocalObjectReference{
 			APIVersion: infraMachine.GetAPIVersion(),
 			Kind:       infraMachine.GetKind(),
 			Name:       infraMachine.GetName(),
@@ -2475,7 +2475,7 @@ func createMachinesWithNodes(
 
 			nodes = append(nodes, node)
 
-			machine.Status.NodeRef = &corev1.ObjectReference{
+			machine.Status.NodeRef = &clusterv1.PinnedObjectReference{
 				Name: node.Name,
 			}
 		}

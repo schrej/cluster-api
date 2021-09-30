@@ -21,7 +21,6 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apiserver/pkg/storage/names"
@@ -85,9 +84,12 @@ func (r *ClusterReconciler) computeDesiredState(ctx context.Context, s *scope.Sc
 // corresponding template defined in the blueprint.
 func computeInfrastructureCluster(_ context.Context, s *scope.Scope) (*unstructured.Unstructured, error) {
 	template := s.Blueprint.InfrastructureClusterTemplate
-	templateClonedFromref := s.Blueprint.ClusterClass.Spec.Infrastructure.Ref
+	templateClonedFromref := s.Blueprint.ClusterClass.Spec.Infrastructure.Ref.FullRef(s.Blueprint.ClusterClass.Namespace)
 	cluster := s.Current.Cluster
-	currentRef := cluster.Spec.InfrastructureRef
+	var currentRef *clusterv1.ObjectReference
+	if cluster.Spec.InfrastructureRef != nil {
+		currentRef = cluster.Spec.InfrastructureRef.FullRef(cluster.Namespace)
+	}
 
 	infrastructureCluster, err := templateToObject(templateToInput{
 		template:              template,
@@ -106,12 +108,12 @@ func computeInfrastructureCluster(_ context.Context, s *scope.Scope) (*unstructu
 // that should be referenced by the ControlPlane object.
 func computeControlPlaneInfrastructureMachineTemplate(_ context.Context, s *scope.Scope) (*unstructured.Unstructured, error) {
 	template := s.Blueprint.ControlPlane.InfrastructureMachineTemplate
-	templateClonedFromRef := s.Blueprint.ClusterClass.Spec.ControlPlane.MachineInfrastructure.Ref
+	templateClonedFromRef := s.Blueprint.ClusterClass.Spec.ControlPlane.MachineInfrastructure.Ref.FullRef(s.Blueprint.ClusterClass.Namespace)
 	cluster := s.Current.Cluster
 
 	// Check if the current control plane object has a machineTemplate.infrastructureRef already defined.
 	// TODO: Move the next few lines into a method on scope.ControlPlaneState
-	var currentRef *corev1.ObjectReference
+	var currentRef *clusterv1.ObjectReference
 	if s.Current.ControlPlane != nil && s.Current.ControlPlane.Object != nil {
 		var err error
 		if currentRef, err = contract.ControlPlane().MachineTemplate().InfrastructureRef().Get(s.Current.ControlPlane.Object); err != nil {
@@ -133,9 +135,12 @@ func computeControlPlaneInfrastructureMachineTemplate(_ context.Context, s *scop
 // corresponding template defined in the blueprint.
 func computeControlPlane(_ context.Context, s *scope.Scope, infrastructureMachineTemplate *unstructured.Unstructured) (*unstructured.Unstructured, error) {
 	template := s.Blueprint.ControlPlane.Template
-	templateClonedFromRef := s.Blueprint.ClusterClass.Spec.ControlPlane.Ref
+	templateClonedFromRef := s.Blueprint.ClusterClass.Spec.ControlPlane.Ref.FullRef(s.Blueprint.ClusterClass.Namespace)
 	cluster := s.Current.Cluster
-	currentRef := cluster.Spec.ControlPlaneRef
+	var currentRef *clusterv1.ObjectReference
+	if cluster.Spec.ControlPlaneRef != nil {
+		currentRef = cluster.Spec.ControlPlaneRef.FullRef(cluster.Namespace)
+	}
 
 	controlPlane, err := templateToObject(templateToInput{
 		template:              template,
@@ -272,8 +277,8 @@ func computeCluster(_ context.Context, s *scope.Scope, infrastructureCluster, co
 
 	// Set the references to the infrastructureCluster and controlPlane objects.
 	// NOTE: Once set for the first time, the references are not expected to change.
-	cluster.Spec.InfrastructureRef = contract.ObjToRef(infrastructureCluster)
-	cluster.Spec.ControlPlaneRef = contract.ObjToRef(controlPlane)
+	cluster.Spec.InfrastructureRef = contract.ObjToRef(infrastructureCluster).LocalRef()
+	cluster.Spec.ControlPlaneRef = contract.ObjToRef(controlPlane).LocalRef()
 
 	return cluster
 }
@@ -306,9 +311,9 @@ func computeMachineDeployment(_ context.Context, s *scope.Scope, desiredControlP
 
 	// Compute the boostrap template.
 	currentMachineDeployment := s.Current.MachineDeployments[machineDeploymentTopology.Name]
-	var currentBootstrapTemplateRef *corev1.ObjectReference
+	var currentBootstrapTemplateRef *clusterv1.ObjectReference
 	if currentMachineDeployment != nil && currentMachineDeployment.BootstrapTemplate != nil {
-		currentBootstrapTemplateRef = currentMachineDeployment.Object.Spec.Template.Spec.Bootstrap.ConfigRef
+		currentBootstrapTemplateRef = currentMachineDeployment.Object.Spec.Template.Spec.Bootstrap.ConfigRef.FullRef(currentMachineDeployment.Object.Namespace)
 	}
 	desiredMachineDeployment.BootstrapTemplate = templateToTemplate(templateToInput{
 		template:              machineDeploymentBlueprint.BootstrapTemplate,
@@ -327,9 +332,9 @@ func computeMachineDeployment(_ context.Context, s *scope.Scope, desiredControlP
 	desiredMachineDeployment.BootstrapTemplate.SetLabels(bootstrapTemplateLabels)
 
 	// Compute the Infrastructure template.
-	var currentInfraMachineTemplateRef *corev1.ObjectReference
+	var currentInfraMachineTemplateRef *clusterv1.ObjectReference
 	if currentMachineDeployment != nil && currentMachineDeployment.InfrastructureMachineTemplate != nil {
-		currentInfraMachineTemplateRef = &currentMachineDeployment.Object.Spec.Template.Spec.InfrastructureRef
+		currentInfraMachineTemplateRef = currentMachineDeployment.Object.Spec.Template.Spec.InfrastructureRef.FullRef(currentMachineDeployment.Object.Namespace)
 	}
 	desiredMachineDeployment.InfrastructureMachineTemplate = templateToTemplate(templateToInput{
 		template:              machineDeploymentBlueprint.InfrastructureMachineTemplate,
@@ -372,8 +377,8 @@ func computeMachineDeployment(_ context.Context, s *scope.Scope, desiredControlP
 				Spec: clusterv1.MachineSpec{
 					ClusterName:       s.Current.Cluster.Name,
 					Version:           pointer.String(version),
-					Bootstrap:         clusterv1.Bootstrap{ConfigRef: contract.ObjToRef(desiredMachineDeployment.BootstrapTemplate)},
-					InfrastructureRef: *contract.ObjToRef(desiredMachineDeployment.InfrastructureMachineTemplate),
+					Bootstrap:         clusterv1.Bootstrap{ConfigRef: contract.ObjToRef(desiredMachineDeployment.BootstrapTemplate).LocalRef()},
+					InfrastructureRef: *contract.ObjToRef(desiredMachineDeployment.InfrastructureMachineTemplate).LocalRef(),
 				},
 			},
 		},
@@ -510,10 +515,10 @@ func computeMachineDeploymentVersion(s *scope.Scope, desiredControlPlaneState *s
 
 type templateToInput struct {
 	template              *unstructured.Unstructured
-	templateClonedFromRef *corev1.ObjectReference
+	templateClonedFromRef *clusterv1.ObjectReference
 	cluster               *clusterv1.Cluster
 	namePrefix            string
-	currentObjectRef      *corev1.ObjectReference
+	currentObjectRef      *clusterv1.ObjectReference
 }
 
 // templateToObject generates an object from a template, taking care

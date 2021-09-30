@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha4
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	apiconversion "k8s.io/apimachinery/pkg/conversion"
 	"sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
@@ -169,4 +170,107 @@ func (dst *MachineHealthCheckList) ConvertFrom(srcRaw conversion.Hub) error {
 func Convert_v1alpha4_MachineStatus_To_v1beta1_MachineStatus(in *MachineStatus, out *v1beta1.MachineStatus, s apiconversion.Scope) error {
 	// Status.version has been removed in v1beta1, thus requiring custom conversion function. the information will be dropped.
 	return autoConvert_v1alpha4_MachineStatus_To_v1beta1_MachineStatus(in, out, s)
+}
+
+func Convert_v1_ObjectReference_To_v1beta1_LocalObjectReference(in *corev1.ObjectReference, out *v1beta1.LocalObjectReference, s apiconversion.Scope) error {
+	out.APIVersion = in.APIVersion
+	out.Kind = in.Kind
+	out.Name = in.Name
+	return nil
+}
+
+func Convert_v1beta1_LocalObjectReference_To_v1_ObjectReference(in *v1beta1.LocalObjectReference, out *corev1.ObjectReference, s apiconversion.Scope) error {
+	out.APIVersion = in.APIVersion
+	out.Kind = in.Kind
+	out.Name = in.Name
+	return nil
+}
+
+func Convert_v1_ObjectReference_To_v1beta1_ObjectReference(in *corev1.ObjectReference, out *v1beta1.ObjectReference, s apiconversion.Scope) error {
+	out.APIVersion = in.APIVersion
+	out.Kind = in.Kind
+	out.Name = in.Name
+	out.Namespace = in.Namespace
+	return nil
+}
+
+func Convert_v1beta1_ObjectReference_To_v1_ObjectReference(in *v1beta1.ObjectReference, out *corev1.ObjectReference, s apiconversion.Scope) error {
+	out.APIVersion = in.APIVersion
+	out.Kind = in.Kind
+	out.Name = in.Name
+	out.Namespace = in.Namespace
+	return nil
+}
+
+func Convert_v1_ObjectReference_To_v1beta1_PinnedObjectReference(in *corev1.ObjectReference, out *v1beta1.PinnedObjectReference, s apiconversion.Scope) error {
+	out.APIVersion = in.APIVersion
+	out.Kind = in.Kind
+	out.Name = in.Name
+	out.Namespace = in.Namespace
+	out.UID = in.UID
+	return nil
+}
+
+func Convert_v1beta1_PinnedObjectReference_To_v1_ObjectReference(in *v1beta1.PinnedObjectReference, out *corev1.ObjectReference, s apiconversion.Scope) error {
+	out.APIVersion = in.APIVersion
+	out.Kind = in.Kind
+	out.Name = in.Name
+	out.Namespace = in.Namespace
+	out.UID = in.UID
+	return nil
+}
+
+func Convert_v1beta1_Cluster_To_v1alpha4_Cluster(in *v1beta1.Cluster, out *Cluster, s apiconversion.Scope) error {
+	err := autoConvert_v1beta1_Cluster_To_v1alpha4_Cluster(in, out, s)
+	setRefNamespace(out.Spec.ControlPlaneRef, in.Namespace)
+	setRefNamespace(out.Spec.InfrastructureRef, in.Namespace)
+	return err
+}
+
+func Convert_v1beta1_ClusterClass_To_v1alpha4_ClusterClass(in *v1beta1.ClusterClass, out *ClusterClass, s apiconversion.Scope) error {
+	err := autoConvert_v1beta1_ClusterClass_To_v1alpha4_ClusterClass(in, out, s)
+	setRefNamespace(out.Spec.ControlPlane.Ref, in.Namespace)
+	if out.Spec.ControlPlane.MachineInfrastructure != nil {
+		setRefNamespace(out.Spec.ControlPlane.MachineInfrastructure.Ref, in.Namespace)
+	}
+	setRefNamespace(out.Spec.Infrastructure.Ref, in.Namespace)
+	for i, w := range out.Spec.Workers.MachineDeployments {
+		setRefNamespace(w.Template.Bootstrap.Ref, in.Namespace)
+		setRefNamespace(w.Template.Infrastructure.Ref, in.Namespace)
+		out.Spec.Workers.MachineDeployments[i] = w
+	}
+	return err
+}
+
+func Convert_v1beta1_Machine_To_v1alpha4_Machine(in *v1beta1.Machine, out *Machine, s apiconversion.Scope) error {
+	err := autoConvert_v1beta1_Machine_To_v1alpha4_Machine(in, out, s)
+	setRefNamespace(&out.Spec.InfrastructureRef, in.Namespace)
+	setRefNamespace(out.Spec.Bootstrap.ConfigRef, in.Namespace)
+	return err
+}
+
+func Convert_v1beta1_MachineDeployment_To_v1alpha4_MachineDeployment(in *v1beta1.MachineDeployment, out *MachineDeployment, s apiconversion.Scope) error {
+	err := autoConvert_v1beta1_MachineDeployment_To_v1alpha4_MachineDeployment(in, out, s)
+	setRefNamespace(&out.Spec.Template.Spec.InfrastructureRef, in.Namespace)
+	setRefNamespace(out.Spec.Template.Spec.Bootstrap.ConfigRef, in.Namespace)
+	return err
+}
+
+func Convert_v1beta1_MachineSet_To_v1alpha4_MachineSet(in *v1beta1.MachineSet, out *MachineSet, s apiconversion.Scope) error {
+	err := autoConvert_v1beta1_MachineSet_To_v1alpha4_MachineSet(in, out, s)
+	setRefNamespace(&out.Spec.Template.Spec.InfrastructureRef, in.Namespace)
+	setRefNamespace(out.Spec.Template.Spec.Bootstrap.ConfigRef, in.Namespace)
+	return err
+}
+
+func Convert_v1beta1_MachineHealthCheck_To_v1alpha4_MachineHealthCheck(in *v1beta1.MachineHealthCheck, out *MachineHealthCheck, s apiconversion.Scope) error {
+	err := autoConvert_v1beta1_MachineHealthCheck_To_v1alpha4_MachineHealthCheck(in, out, s)
+	setRefNamespace(out.Spec.RemediationTemplate, in.Namespace)
+	return err
+}
+
+func setRefNamespace(ref *corev1.ObjectReference, namespace string) {
+	if ref != nil {
+		ref.Namespace = namespace
+	}
 }

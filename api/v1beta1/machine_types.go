@@ -65,7 +65,7 @@ type MachineSpec struct {
 
 	// InfrastructureRef is a required reference to a custom resource
 	// offered by an infrastructure provider.
-	InfrastructureRef corev1.ObjectReference `json:"infrastructureRef"`
+	InfrastructureRef LocalObjectReference `json:"infrastructureRef"`
 
 	// Version defines the desired Kubernetes version.
 	// This field is meant to be optionally used by bootstrap providers.
@@ -105,7 +105,7 @@ type MachineSpec struct {
 type MachineStatus struct {
 	// NodeRef will point to the corresponding Node if it exists.
 	// +optional
-	NodeRef *corev1.ObjectReference `json:"nodeRef,omitempty"`
+	NodeRef *PinnedObjectReference `json:"nodeRef,omitempty"`
 
 	// NodeInfo is a set of ids/uuids to uniquely identify the node.
 	// More info: https://kubernetes.io/docs/concepts/nodes/node/#info
@@ -215,7 +215,7 @@ type Bootstrap struct {
 	// allow users/operators to specify Bootstrap.DataSecretName without
 	// the need of a controller.
 	// +optional
-	ConfigRef *corev1.ObjectReference `json:"configRef,omitempty"`
+	ConfigRef *LocalObjectReference `json:"configRef,omitempty"`
 
 	// DataSecretName is the name of the secret that stores the bootstrap data script.
 	// If nil, the Machine should remain in the Pending state.

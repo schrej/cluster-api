@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	fuzz "github.com/google/gofuzz"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/apitesting/fuzzer"
 	runtimeserializer "k8s.io/apimachinery/pkg/runtime/serializer"
 	"sigs.k8s.io/cluster-api/api/v1beta1"
@@ -32,29 +33,31 @@ func TestFuzzyConversion(t *testing.T) {
 		Hub:                &v1beta1.Cluster{},
 		Spoke:              &Cluster{},
 		SpokeAfterMutation: clusterSpokeAfterMutation,
+		FuzzerFuncs:        []fuzzer.FuzzerFuncs{ClusterFuzzFunc, ObjectReferenceFuzzFunc},
 	}))
 
 	t.Run("for Machine", utilconversion.FuzzTestFunc(utilconversion.FuzzTestFuncInput{
 		Hub:         &v1beta1.Machine{},
 		Spoke:       &Machine{},
-		FuzzerFuncs: []fuzzer.FuzzerFuncs{BootstrapFuzzFuncs, MachineStatusFuzzFunc},
+		FuzzerFuncs: []fuzzer.FuzzerFuncs{MachineFuzzFunc, BootstrapFuzzFuncs, MachineStatusFuzzFunc, ObjectReferenceFuzzFunc},
 	}))
 
 	t.Run("for MachineSet", utilconversion.FuzzTestFunc(utilconversion.FuzzTestFuncInput{
 		Hub:         &v1beta1.MachineSet{},
 		Spoke:       &MachineSet{},
-		FuzzerFuncs: []fuzzer.FuzzerFuncs{BootstrapFuzzFuncs, CustomObjectMetaFuzzFunc},
+		FuzzerFuncs: []fuzzer.FuzzerFuncs{MachineSetFuzzFunc, BootstrapFuzzFuncs, CustomObjectMetaFuzzFunc, ObjectReferenceFuzzFunc},
 	}))
 
 	t.Run("for MachineDeployment", utilconversion.FuzzTestFunc(utilconversion.FuzzTestFuncInput{
 		Hub:         &v1beta1.MachineDeployment{},
 		Spoke:       &MachineDeployment{},
-		FuzzerFuncs: []fuzzer.FuzzerFuncs{BootstrapFuzzFuncs, CustomObjectMetaFuzzFunc},
+		FuzzerFuncs: []fuzzer.FuzzerFuncs{MachineDeploymentFuzzFunc, BootstrapFuzzFuncs, CustomObjectMetaFuzzFunc, ObjectReferenceFuzzFunc},
 	}))
 
 	t.Run("for MachineHealthCheck", utilconversion.FuzzTestFunc(utilconversion.FuzzTestFuncInput{
-		Hub:   &v1beta1.MachineHealthCheck{},
-		Spoke: &MachineHealthCheck{},
+		Hub:         &v1beta1.MachineHealthCheck{},
+		Spoke:       &MachineHealthCheck{},
+		FuzzerFuncs: []fuzzer.FuzzerFuncs{MachineHealthCheckFuzzFunc, ObjectReferenceFuzzFunc},
 	}))
 }
 
@@ -122,4 +125,74 @@ func clusterSpokeAfterMutation(c conversion.Convertible) {
 
 	// Point cluster.Status.Conditions and our slice that does not have ControlPlaneInitializedCondition
 	cluster.Status.Conditions = tmp
+}
+
+func ObjectReferenceFuzzFunc(_ runtimeserializer.CodecFactory) []interface{} {
+	return []interface{}{
+		func(obj *corev1.ObjectReference, c fuzz.Continue) {
+			c.FuzzNoCustom(obj)
+
+			obj.FieldPath = ""
+			obj.ResourceVersion = ""
+			obj.UID = ""
+		},
+	}
+}
+
+func ClusterFuzzFunc(_ runtimeserializer.CodecFactory) []interface{} {
+	return []interface{}{
+		func(c *Cluster, fuzzer fuzz.Continue) {
+			fuzzer.FuzzNoCustom(c)
+
+			setRefNamespace(c.Spec.ControlPlaneRef, c.Namespace)
+			setRefNamespace(c.Spec.InfrastructureRef, c.Namespace)
+		},
+	}
+}
+
+func MachineFuzzFunc(_ runtimeserializer.CodecFactory) []interface{} {
+	return []interface{}{
+		func(m *Machine, fuzzer fuzz.Continue) {
+			fuzzer.FuzzNoCustom(m)
+
+			setRefNamespace(&m.Spec.InfrastructureRef, m.Namespace)
+			setRefNamespace(m.Spec.Bootstrap.ConfigRef, m.Namespace)
+			if m.Status.NodeRef != nil {
+				m.Status.NodeRef.Namespace = m.Namespace
+				fuzzer.Fuzz(&m.Status.NodeRef.UID)
+			}
+		},
+	}
+}
+
+func MachineSetFuzzFunc(_ runtimeserializer.CodecFactory) []interface{} {
+	return []interface{}{
+		func(ms *MachineSet, fuzzer fuzz.Continue) {
+			fuzzer.FuzzNoCustom(ms)
+
+			setRefNamespace(&ms.Spec.Template.Spec.InfrastructureRef, ms.Namespace)
+			setRefNamespace(ms.Spec.Template.Spec.Bootstrap.ConfigRef, ms.Namespace)
+		},
+	}
+}
+
+func MachineDeploymentFuzzFunc(_ runtimeserializer.CodecFactory) []interface{} {
+	return []interface{}{
+		func(md *MachineDeployment, fuzzer fuzz.Continue) {
+			fuzzer.FuzzNoCustom(md)
+
+			setRefNamespace(&md.Spec.Template.Spec.InfrastructureRef, md.Namespace)
+			setRefNamespace(md.Spec.Template.Spec.Bootstrap.ConfigRef, md.Namespace)
+		},
+	}
+}
+
+func MachineHealthCheckFuzzFunc(_ runtimeserializer.CodecFactory) []interface{} {
+	return []interface{}{
+		func(mh *MachineHealthCheck, fuzzer fuzz.Continue) {
+			fuzzer.FuzzNoCustom(mh)
+
+			setRefNamespace(mh.Spec.RemediationTemplate, mh.Namespace)
+		},
+	}
 }

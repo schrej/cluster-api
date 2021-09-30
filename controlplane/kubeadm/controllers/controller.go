@@ -241,7 +241,7 @@ func (r *KubeadmControlPlaneReconciler) reconcile(ctx context.Context, cluster *
 	log.Info("Reconcile KubeadmControlPlane")
 
 	// Make sure to reconcile the external infrastructure reference.
-	if err := r.reconcileExternalReference(ctx, cluster, &kcp.Spec.MachineTemplate.InfrastructureRef); err != nil {
+	if err := r.reconcileExternalReference(ctx, cluster, clusterv1.ObjectReferenceFromCore(kcp.Spec.MachineTemplate.InfrastructureRef).LocalRef()); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -477,7 +477,7 @@ func (r *KubeadmControlPlaneReconciler) ClusterToKubeadmControlPlane(o client.Ob
 
 	controlPlaneRef := c.Spec.ControlPlaneRef
 	if controlPlaneRef != nil && controlPlaneRef.Kind == "KubeadmControlPlane" {
-		return []ctrl.Request{{NamespacedName: client.ObjectKey{Namespace: controlPlaneRef.Namespace, Name: controlPlaneRef.Name}}}
+		return []ctrl.Request{{NamespacedName: client.ObjectKey{Namespace: c.Namespace, Name: controlPlaneRef.Name}}}
 	}
 
 	return nil
@@ -584,7 +584,7 @@ func (r *KubeadmControlPlaneReconciler) adoptMachines(ctx context.Context, kcp *
 	}
 
 	for _, m := range machines {
-		ref := m.Spec.Bootstrap.ConfigRef
+		ref := m.Spec.Bootstrap.ConfigRef.FullRef(m.Namespace)
 
 		// TODO instead of returning error here, we should instead Event and add a watch on potentially adoptable Machines
 		if ref == nil || ref.Kind != "KubeadmConfig" {

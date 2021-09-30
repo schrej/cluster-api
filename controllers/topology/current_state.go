@@ -70,9 +70,10 @@ func (r *ClusterReconciler) getCurrentState(ctx context.Context, s *scope.Scope)
 // getCurrentInfrastructureClusterState looks for the state of the InfrastructureCluster. If a reference is set but not
 // found, either from an error or the object not being found, an error is thrown.
 func (r *ClusterReconciler) getCurrentInfrastructureClusterState(ctx context.Context, cluster *clusterv1.Cluster) (*unstructured.Unstructured, error) {
-	infra, err := r.getReference(ctx, cluster.Spec.InfrastructureRef)
+	infraRef := cluster.Spec.InfrastructureRef.FullRef(cluster.Namespace)
+	infra, err := r.getReference(ctx, infraRef)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to read %s", tlog.KRef{Ref: cluster.Spec.InfrastructureRef})
+		return nil, errors.Wrapf(err, "failed to read %s", tlog.KRef{Ref: infraRef})
 	}
 	return infra, nil
 }
@@ -85,9 +86,10 @@ func (r *ClusterReconciler) getCurrentControlPlaneState(ctx context.Context, clu
 	res := &scope.ControlPlaneState{}
 
 	// Get the control plane object.
-	res.Object, err = r.getReference(ctx, cluster.Spec.ControlPlaneRef)
+	cpRef := cluster.Spec.ControlPlaneRef.FullRef(cluster.Namespace)
+	res.Object, err = r.getReference(ctx, cpRef)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to read %s", tlog.KRef{Ref: cluster.Spec.ControlPlaneRef})
+		return nil, errors.Wrapf(err, "failed to read %s", tlog.KRef{Ref: cpRef})
 	}
 
 	// If the clusterClass does not mandate the controlPlane has infrastructureMachines, return.
@@ -148,7 +150,10 @@ func (r *ClusterReconciler) getCurrentMachineDeploymentState(ctx context.Context
 		}
 
 		// Gets the BootstrapTemplate
-		bootstrapRef := m.Spec.Template.Spec.Bootstrap.ConfigRef
+		if m.Spec.Template.Spec.Bootstrap.ConfigRef == nil {
+			return nil, fmt.Errorf("%s does not have a reference to a Bootstrap Config", tlog.KObj{Obj: m})
+		}
+		bootstrapRef := m.Spec.Template.Spec.Bootstrap.ConfigRef.FullRef(m.Namespace)
 		if bootstrapRef == nil {
 			return nil, fmt.Errorf("%s does not have a reference to a Bootstrap Config", tlog.KObj{Obj: m})
 		}
@@ -158,11 +163,11 @@ func (r *ClusterReconciler) getCurrentMachineDeploymentState(ctx context.Context
 		}
 
 		// Gets the InfrastructureMachineTemplate
-		infraRef := m.Spec.Template.Spec.InfrastructureRef
+		infraRef := m.Spec.Template.Spec.InfrastructureRef.FullRef(m.Namespace)
 		if infraRef.Name == "" {
 			return nil, fmt.Errorf("%s does not have a reference to a InfrastructureMachineTemplate", tlog.KObj{Obj: m})
 		}
-		i, err := r.getReference(ctx, &infraRef)
+		i, err := r.getReference(ctx, infraRef)
 		if err != nil {
 			return nil, errors.Wrap(err, fmt.Sprintf("%s Infrastructure reference could not be retrieved", tlog.KObj{Obj: m}))
 		}

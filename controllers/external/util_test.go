@@ -22,7 +22,6 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/pkg/errors"
-	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -55,7 +54,7 @@ func TestGetResourceFound(t *testing.T) {
 	testResource.SetNamespace(metav1.NamespaceDefault)
 	testResource.SetResourceVersion(testResourceVersion)
 
-	testResourceReference := &corev1.ObjectReference{
+	testResourceReference := &clusterv1.ObjectReference{
 		Kind:       testResourceKind,
 		APIVersion: testResourceAPIVersion,
 		Name:       testResourceName,
@@ -63,7 +62,7 @@ func TestGetResourceFound(t *testing.T) {
 	}
 
 	fakeClient := fake.NewClientBuilder().WithObjects(testResource.DeepCopy()).Build()
-	got, err := Get(ctx, fakeClient, testResourceReference, metav1.NamespaceDefault)
+	got, err := Get(ctx, fakeClient, testResourceReference)
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(got).To(Equal(testResource))
 }
@@ -71,7 +70,7 @@ func TestGetResourceFound(t *testing.T) {
 func TestGetResourceNotFound(t *testing.T) {
 	g := NewWithT(t)
 
-	testResourceReference := &corev1.ObjectReference{
+	testResourceReference := &clusterv1.ObjectReference{
 		Kind:       "BlueTemplate",
 		APIVersion: "blue.io/v1",
 		Name:       "blueTemplate",
@@ -79,7 +78,7 @@ func TestGetResourceNotFound(t *testing.T) {
 	}
 
 	fakeClient := fake.NewClientBuilder().Build()
-	_, err := Get(ctx, fakeClient, testResourceReference, metav1.NamespaceDefault)
+	_, err := Get(ctx, fakeClient, testResourceReference)
 	g.Expect(err).To(HaveOccurred())
 	g.Expect(apierrors.IsNotFound(errors.Cause(err))).To(BeTrue())
 }
@@ -89,7 +88,7 @@ func TestCloneTemplateResourceNotFound(t *testing.T) {
 
 	testClusterName := "bar"
 
-	testResourceReference := &corev1.ObjectReference{
+	testResourceReference := &clusterv1.ObjectReference{
 		Kind:       "OrangeTemplate",
 		APIVersion: "orange.io/v1",
 		Name:       "orangeTemplate",
@@ -142,7 +141,7 @@ func TestCloneTemplateResourceFound(t *testing.T) {
 		},
 	}
 
-	templateRef := corev1.ObjectReference{
+	templateRef := clusterv1.ObjectReference{
 		Kind:       templateKind,
 		APIVersion: templateAPIVersion,
 		Name:       templateName,
@@ -243,7 +242,7 @@ func TestCloneTemplateResourceFoundNoOwner(t *testing.T) {
 		},
 	}
 
-	templateRef := &corev1.ObjectReference{
+	templateRef := &clusterv1.ObjectReference{
 		Kind:       templateKind,
 		APIVersion: templateAPIVersion,
 		Name:       templateName,
@@ -306,7 +305,7 @@ func TestCloneTemplateMissingSpecTemplate(t *testing.T) {
 		},
 	}
 
-	templateRef := &corev1.ObjectReference{
+	templateRef := &clusterv1.ObjectReference{
 		Kind:       templateKind,
 		APIVersion: templateAPIVersion,
 		Name:       templateName,

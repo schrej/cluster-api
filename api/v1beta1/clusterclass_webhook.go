@@ -45,18 +45,6 @@ var _ webhook.Defaulter = &ClusterClass{}
 
 // Default satisfies the defaulting webhook interface.
 func (in *ClusterClass) Default() {
-	// Default all namespaces in the references to the object namespace.
-	defaultNamespace(in.Spec.Infrastructure.Ref, in.Namespace)
-	defaultNamespace(in.Spec.ControlPlane.Ref, in.Namespace)
-
-	if in.Spec.ControlPlane.MachineInfrastructure != nil {
-		defaultNamespace(in.Spec.ControlPlane.MachineInfrastructure.Ref, in.Namespace)
-	}
-
-	for i := range in.Spec.Workers.MachineDeployments {
-		defaultNamespace(in.Spec.Workers.MachineDeployments[i].Template.Bootstrap.Ref, in.Namespace)
-		defaultNamespace(in.Spec.Workers.MachineDeployments[i].Template.Infrastructure.Ref, in.Namespace)
-	}
 }
 
 func defaultNamespace(ref *corev1.ObjectReference, namespace string) {
@@ -217,18 +205,6 @@ func (r *LocalObjectTemplate) isValid(namespace string, pathPrefix *field.Path) 
 				pathPrefix.Child("ref", "name"),
 				r.Ref.Name,
 				"cannot be empty",
-			),
-		)
-	}
-
-	// validate if namespace matches the provided namespace
-	if namespace != "" && r.Ref.Namespace != namespace {
-		allErrs = append(
-			allErrs,
-			field.Invalid(
-				pathPrefix.Child("ref", "namespace"),
-				r.Ref.Namespace,
-				fmt.Sprintf("must be '%s'", namespace),
 			),
 		)
 	}

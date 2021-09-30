@@ -357,14 +357,14 @@ func (r *MachineSetReconciler) syncReplicas(ctx context.Context, ms *clusterv1.M
 
 			// Clone and set the infrastructure and bootstrap references.
 			var (
-				infraRef, bootstrapRef *corev1.ObjectReference
+				infraRef, bootstrapRef *clusterv1.PinnedObjectReference
 				err                    error
 			)
 
 			if machine.Spec.Bootstrap.ConfigRef != nil {
 				bootstrapRef, err = external.CloneTemplate(ctx, &external.CloneTemplateInput{
 					Client:      r.Client,
-					TemplateRef: machine.Spec.Bootstrap.ConfigRef,
+					TemplateRef: machine.Spec.Bootstrap.ConfigRef.FullRef(machine.Namespace),
 					Namespace:   machine.Namespace,
 					ClusterName: machine.Spec.ClusterName,
 					Labels:      machine.Labels,
@@ -373,12 +373,12 @@ func (r *MachineSetReconciler) syncReplicas(ctx context.Context, ms *clusterv1.M
 					conditions.MarkFalse(ms, clusterv1.MachinesCreatedCondition, clusterv1.BootstrapTemplateCloningFailedReason, clusterv1.ConditionSeverityError, err.Error())
 					return errors.Wrapf(err, "failed to clone bootstrap configuration for MachineSet %q in namespace %q", ms.Name, ms.Namespace)
 				}
-				machine.Spec.Bootstrap.ConfigRef = bootstrapRef
+				machine.Spec.Bootstrap.ConfigRef = bootstrapRef.Unpin().LocalRef()
 			}
 
 			infraRef, err = external.CloneTemplate(ctx, &external.CloneTemplateInput{
 				Client:      r.Client,
-				TemplateRef: &machine.Spec.InfrastructureRef,
+				TemplateRef: machine.Spec.InfrastructureRef.FullRef(machine.Namespace),
 				Namespace:   machine.Namespace,
 				ClusterName: machine.Spec.ClusterName,
 				Labels:      machine.Labels,
@@ -388,7 +388,7 @@ func (r *MachineSetReconciler) syncReplicas(ctx context.Context, ms *clusterv1.M
 				conditions.MarkFalse(ms, clusterv1.MachinesCreatedCondition, clusterv1.InfrastructureTemplateCloningFailedReason, clusterv1.ConditionSeverityError, err.Error())
 				return errors.Wrapf(err, "failed to clone infrastructure configuration for MachineSet %q in namespace %q", ms.Name, ms.Namespace)
 			}
-			machine.Spec.InfrastructureRef = *infraRef
+			machine.Spec.InfrastructureRef = *infraRef.Unpin().LocalRef()
 
 			if err := r.Client.Create(ctx, machine); err != nil {
 				log.Error(err, "Unable to create Machine", "machine", machine.Name)
@@ -398,11 +398,11 @@ func (r *MachineSetReconciler) syncReplicas(ctx context.Context, ms *clusterv1.M
 					clusterv1.ConditionSeverityError, err.Error())
 
 				// Try to cleanup the external objects if the Machine creation failed.
-				if err := r.Client.Delete(ctx, util.ObjectReferenceToUnstructured(*infraRef)); !apierrors.IsNotFound(err) {
+				if err := r.Client.Delete(ctx, util.ObjectReferenceToUnstructured(*infraRef.Unpin())); !apierrors.IsNotFound(err) {
 					log.Error(err, "Failed to cleanup infrastructure configuration object after Machine creation error")
 				}
 				if bootstrapRef != nil {
-					if err := r.Client.Delete(ctx, util.ObjectReferenceToUnstructured(*bootstrapRef)); !apierrors.IsNotFound(err) {
+					if err := r.Client.Delete(ctx, util.ObjectReferenceToUnstructured(*bootstrapRef.Unpin())); !apierrors.IsNotFound(err) {
 						log.Error(err, "Failed to cleanup bootstrap configuration object after Machine creation error")
 					}
 				}
@@ -714,16 +714,17 @@ func (r *MachineSetReconciler) getMachineNode(ctx context.Context, cluster *clus
 	return node, nil
 }
 
-func reconcileExternalTemplateReference(ctx context.Context, c client.Client, cluster *clusterv1.Cluster, ref *corev1.ObjectReference) error {
+func reconcileExternalTemplateReference(ctx context.Context, c client.Client, cluster *clusterv1.Cluster, ref *clusterv1.LocalObjectReference) error {
 	if !strings.HasSuffix(ref.Kind, clusterv1.TemplateSuffix) {
 		return nil
 	}
 
-	if err := utilconversion.UpdateReferenceAPIContract(ctx, c, ref); err != nil {
+	fullRef := ref.FullRef(cluster.Namespace)
+	if err := utilconversion.UpdateReferenceAPIContract(ctx, c, fullRef); err != nil {
 		return err
 	}
 
-	obj, err := external.Get(ctx, c, ref, cluster.Namespace)
+	obj, err := external.Get(ctx, c, fullRef)
 	if err != nil {
 		return err
 	}

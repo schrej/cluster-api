@@ -21,7 +21,6 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apiserver/pkg/storage/names"
@@ -30,7 +29,7 @@ import (
 )
 
 // Get uses the client and reference to get an external, unstructured object.
-func Get(ctx context.Context, c client.Client, ref *corev1.ObjectReference, namespace string) (*unstructured.Unstructured, error) {
+func Get(ctx context.Context, c client.Client, ref *clusterv1.ObjectReference) (*unstructured.Unstructured, error) {
 	if ref == nil {
 		return nil, errors.Errorf("cannot get object - object reference not set")
 	}
@@ -38,7 +37,7 @@ func Get(ctx context.Context, c client.Client, ref *corev1.ObjectReference, name
 	obj.SetAPIVersion(ref.APIVersion)
 	obj.SetKind(ref.Kind)
 	obj.SetName(ref.Name)
-	key := client.ObjectKey{Name: obj.GetName(), Namespace: namespace}
+	key := client.ObjectKey{Name: obj.GetName(), Namespace: ref.Namespace}
 	if err := c.Get(ctx, key, obj); err != nil {
 		return nil, errors.Wrapf(err, "failed to retrieve %s external object %q/%q", obj.GetKind(), key.Namespace, key.Name)
 	}
@@ -46,7 +45,7 @@ func Get(ctx context.Context, c client.Client, ref *corev1.ObjectReference, name
 }
 
 // Delete uses the client and reference to delete an external, unstructured object.
-func Delete(ctx context.Context, c client.Client, ref *corev1.ObjectReference) error {
+func Delete(ctx context.Context, c client.Client, ref *clusterv1.ObjectReference) error {
 	obj := new(unstructured.Unstructured)
 	obj.SetAPIVersion(ref.APIVersion)
 	obj.SetKind(ref.Kind)
@@ -64,7 +63,7 @@ type CloneTemplateInput struct {
 	Client client.Client
 
 	// TemplateRef is a reference to the template that needs to be cloned.
-	TemplateRef *corev1.ObjectReference
+	TemplateRef *clusterv1.ObjectReference
 
 	// Namespace is the Kubernetes namespace the cloned object should be created into.
 	Namespace string
@@ -86,8 +85,8 @@ type CloneTemplateInput struct {
 }
 
 // CloneTemplate uses the client and the reference to create a new object from the template.
-func CloneTemplate(ctx context.Context, in *CloneTemplateInput) (*corev1.ObjectReference, error) {
-	from, err := Get(ctx, in.Client, in.TemplateRef, in.Namespace)
+func CloneTemplate(ctx context.Context, in *CloneTemplateInput) (*clusterv1.PinnedObjectReference, error) {
+	from, err := Get(ctx, in.Client, in.TemplateRef)
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +118,7 @@ type GenerateTemplateInput struct {
 	Template *unstructured.Unstructured
 
 	// TemplateRef is a reference to the template that needs to be cloned.
-	TemplateRef *corev1.ObjectReference
+	TemplateRef *clusterv1.ObjectReference
 
 	// Namespace is the Kubernetes namespace the cloned object should be created into.
 	Namespace string
@@ -199,8 +198,8 @@ func GenerateTemplate(in *GenerateTemplateInput) (*unstructured.Unstructured, er
 }
 
 // GetObjectReference converts an unstructured into object reference.
-func GetObjectReference(obj *unstructured.Unstructured) *corev1.ObjectReference {
-	return &corev1.ObjectReference{
+func GetObjectReference(obj *unstructured.Unstructured) *clusterv1.PinnedObjectReference {
+	return &clusterv1.PinnedObjectReference{
 		APIVersion: obj.GetAPIVersion(),
 		Kind:       obj.GetKind(),
 		Name:       obj.GetName(),

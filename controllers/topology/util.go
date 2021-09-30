@@ -21,7 +21,6 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -50,7 +49,7 @@ func controlPlaneInfrastructureMachineTemplateNamePrefix(clusterName string) str
 
 // getReference gets the object referenced in ref.
 // If necessary, it updates the ref to the latest apiVersion of the current contract.
-func (r *ClusterReconciler) getReference(ctx context.Context, ref *corev1.ObjectReference) (*unstructured.Unstructured, error) {
+func (r *ClusterReconciler) getReference(ctx context.Context, ref *clusterv1.ObjectReference) (*unstructured.Unstructured, error) {
 	if ref == nil {
 		return nil, errors.New("reference is not set")
 	}
@@ -58,7 +57,7 @@ func (r *ClusterReconciler) getReference(ctx context.Context, ref *corev1.Object
 		return nil, err
 	}
 
-	obj, err := external.Get(ctx, r.UnstructuredCachingClient, ref, ref.Namespace)
+	obj, err := external.Get(ctx, r.UnstructuredCachingClient, ref)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to retrieve %s %q in namespace %q", ref.Kind, ref.Name, ref.Namespace)
 	}
@@ -66,7 +65,7 @@ func (r *ClusterReconciler) getReference(ctx context.Context, ref *corev1.Object
 }
 
 // refToUnstructured returns an unstructured object with details from an ObjectReference.
-func refToUnstructured(ref *corev1.ObjectReference) *unstructured.Unstructured {
+func refToUnstructured(ref *clusterv1.ObjectReference) *unstructured.Unstructured {
 	uns := &unstructured.Unstructured{}
 	uns.SetAPIVersion(ref.APIVersion)
 	uns.SetKind(ref.Kind)
@@ -125,7 +124,7 @@ func calculateTemplatesInUse(md *clusterv1.MachineDeployment, msList []*clusterv
 }
 
 // deleteTemplateIfUnused deletes the template (ref), if it is not in use (i.e. in templatesInUse).
-func deleteTemplateIfUnused(ctx context.Context, c client.Client, templatesInUse map[string]bool, ref *corev1.ObjectReference) error {
+func deleteTemplateIfUnused(ctx context.Context, c client.Client, templatesInUse map[string]bool, ref *clusterv1.ObjectReference) error {
 	// If ref is nil, do nothing (this can happen, because bootstrap templates are optional).
 	if ref == nil {
 		return nil
@@ -133,7 +132,7 @@ func deleteTemplateIfUnused(ctx context.Context, c client.Client, templatesInUse
 
 	log := tlog.LoggerFrom(ctx).WithRef(ref)
 
-	refID, err := templateRefID(ref)
+	refID, err := templateRefID(ref.LocalRef())
 	if err != nil {
 		return errors.Wrapf(err, "failed to calculate templateRefID")
 	}
@@ -152,7 +151,7 @@ func deleteTemplateIfUnused(ctx context.Context, c client.Client, templatesInUse
 }
 
 // addTemplateRef adds the refs to the refMap with the templateRefID as key.
-func addTemplateRef(refMap map[string]bool, refs ...*corev1.ObjectReference) error {
+func addTemplateRef(refMap map[string]bool, refs ...*clusterv1.LocalObjectReference) error {
 	for _, ref := range refs {
 		if ref != nil {
 			refID, err := templateRefID(ref)
@@ -167,7 +166,7 @@ func addTemplateRef(refMap map[string]bool, refs ...*corev1.ObjectReference) err
 
 // templateRefID returns the templateRefID of a ObjectReference in the format: g/k/name.
 // Note: We don't include the version as references with different versions should be treated as equal.
-func templateRefID(ref *corev1.ObjectReference) (string, error) {
+func templateRefID(ref *clusterv1.LocalObjectReference) (string, error) {
 	if ref == nil {
 		return "", nil
 	}

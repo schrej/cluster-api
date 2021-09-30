@@ -21,7 +21,6 @@ import (
 
 	. "github.com/onsi/gomega"
 	"github.com/pkg/errors"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
@@ -50,10 +49,10 @@ func TestGetReference(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		ref     *corev1.ObjectReference
+		ref     *clusterv1.ObjectReference
 		objects []client.Object
 		want    *unstructured.Unstructured
-		wantRef *corev1.ObjectReference
+		wantRef *clusterv1.ObjectReference
 		wantErr bool
 	}{
 		{
@@ -111,7 +110,7 @@ func TestGetReference(t *testing.T) {
 			g.Expect(err).NotTo(HaveOccurred())
 
 			g.Expect(got).To(EqualObject(tt.want))
-			g.Expect(tt.ref).To(EqualObject(tt.wantRef))
+			g.Expect(tt.ref).To(Equal(tt.wantRef))
 		})
 	}
 }
@@ -202,7 +201,7 @@ func TestCalculateTemplatesInUse(t *testing.T) {
 
 // mustTemplateRefID returns the templateRefID as calculated by templateRefID, but panics
 // if templateRefID returns an error.
-func mustTemplateRefID(ref *corev1.ObjectReference) string {
+func mustTemplateRefID(ref *clusterv1.LocalObjectReference) string {
 	refID, err := templateRefID(ref)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to calculate templateRefID"))

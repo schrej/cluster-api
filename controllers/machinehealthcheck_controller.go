@@ -380,7 +380,7 @@ func (r *MachineHealthCheckReconciler) patchUnhealthyTargets(ctx context.Context
 					UID:        t.Machine.UID,
 				}
 
-				from, err := external.Get(ctx, r.Client, m.Spec.RemediationTemplate, t.Machine.Namespace)
+				from, err := external.Get(ctx, r.Client, m.Spec.RemediationTemplate.FullRef(t.Machine.Namespace))
 				if err != nil {
 					conditions.MarkFalse(m, clusterv1.ExternalRemediationTemplateAvailable, clusterv1.ExternalRemediationTemplateNotFound, clusterv1.ConditionSeverityError, err.Error())
 					errList = append(errList, errors.Wrapf(err, "error retrieving remediation template %v %q for machine %q in namespace %q within cluster %q", m.Spec.RemediationTemplate.GroupVersionKind(), m.Spec.RemediationTemplate.Name, t.Machine.Name, t.Machine.Namespace, m.Spec.ClusterName))
@@ -389,7 +389,7 @@ func (r *MachineHealthCheckReconciler) patchUnhealthyTargets(ctx context.Context
 
 				generateTemplateInput := &external.GenerateTemplateInput{
 					Template:    from,
-					TemplateRef: m.Spec.RemediationTemplate,
+					TemplateRef: m.Spec.RemediationTemplate.FullRef(m.Namespace),
 					Namespace:   t.Machine.Namespace,
 					ClusterName: t.Machine.ClusterName,
 					OwnerRef:    cloneOwnerRef,
@@ -631,12 +631,13 @@ func unhealthyMachineCount(mhc *clusterv1.MachineHealthCheck) int {
 
 // getExternalRemediationRequest gets reference to External Remediation Request, unstructured object.
 func (r *MachineHealthCheckReconciler) getExternalRemediationRequest(ctx context.Context, m *clusterv1.MachineHealthCheck, machineName string) (*unstructured.Unstructured, error) {
-	remediationRef := &corev1.ObjectReference{
+	remediationRef := &clusterv1.ObjectReference{
 		APIVersion: m.Spec.RemediationTemplate.APIVersion,
 		Kind:       strings.TrimSuffix(m.Spec.RemediationTemplate.Kind, clusterv1.TemplateSuffix),
 		Name:       machineName,
+		Namespace:  m.Namespace,
 	}
-	remediationReq, err := external.Get(ctx, r.Client, remediationRef, m.Namespace)
+	remediationReq, err := external.Get(ctx, r.Client, remediationRef)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to retrieve external remediation request object")
 	}

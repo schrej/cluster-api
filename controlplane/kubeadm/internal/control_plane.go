@@ -215,7 +215,7 @@ func (c *ControlPlane) GenerateKubeadmConfig(spec *bootstrapv1.KubeadmConfigSpec
 }
 
 // NewMachine returns a machine configured to be a part of the control plane.
-func (c *ControlPlane) NewMachine(infraRef, bootstrapRef *corev1.ObjectReference, failureDomain *string) *clusterv1.Machine {
+func (c *ControlPlane) NewMachine(infraRef, bootstrapRef *clusterv1.LocalObjectReference, failureDomain *string) *clusterv1.Machine {
 	return &clusterv1.Machine{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        names.SimpleNameGenerator.GenerateName(c.KCP.Name + "-"),
@@ -277,7 +277,7 @@ func (c *ControlPlane) UpToDateMachines() collections.Machines {
 func getInfraResources(ctx context.Context, cl client.Client, machines collections.Machines) (map[string]*unstructured.Unstructured, error) {
 	result := map[string]*unstructured.Unstructured{}
 	for _, m := range machines {
-		infraObj, err := external.Get(ctx, cl, &m.Spec.InfrastructureRef, m.Namespace)
+		infraObj, err := external.Get(ctx, cl, m.Spec.InfrastructureRef.FullRef(m.Namespace))
 		if err != nil {
 			if apierrors.IsNotFound(errors.Cause(err)) {
 				continue

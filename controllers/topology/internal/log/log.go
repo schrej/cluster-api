@@ -21,7 +21,6 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	corev1 "k8s.io/api/core/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -49,7 +48,7 @@ type Logger interface {
 
 	// WithRef adds to the logger information about the object ref being modified by reconcile, which in most case it is
 	// a resources being part of the Cluster by reconciled.
-	WithRef(ref *corev1.ObjectReference) Logger
+	WithRef(ref *clusterv1.ObjectReference) Logger
 
 	// WithMachineDeployment adds to the logger information about the MachineDeployment object being processed.
 	WithMachineDeployment(md *clusterv1.MachineDeployment) Logger
@@ -86,7 +85,7 @@ func (l *topologyReconcileLogger) WithObject(obj client.Object) Logger {
 
 // WithRef adds to the logger information about the object ref being modified by reconcile, which in most case it is
 // a resources being part of the Cluster by reconciled.
-func (l *topologyReconcileLogger) WithRef(ref *corev1.ObjectReference) Logger {
+func (l *topologyReconcileLogger) WithRef(ref *clusterv1.ObjectReference) Logger {
 	l.Logger = l.Logger.WithValues(
 		"object groupVersion", ref.APIVersion,
 		"object kind", ref.Kind,
@@ -140,7 +139,7 @@ func (ref KObj) String() string {
 
 // KRef return a reference to a Kubernetes object in the same format used by kubectl commands (kind/name).
 type KRef struct {
-	Ref *corev1.ObjectReference
+	Ref *clusterv1.ObjectReference
 }
 
 func (ref KRef) String() string {

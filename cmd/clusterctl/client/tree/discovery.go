@@ -60,12 +60,12 @@ func Discovery(ctx context.Context, c client.Client, namespace, name string, opt
 	tree := NewObjectTree(cluster, options.toObjectTreeOptions())
 
 	// Adds cluster infra
-	if clusterInfra, err := external.Get(ctx, c, cluster.Spec.InfrastructureRef, cluster.Namespace); err == nil {
+	if clusterInfra, err := external.Get(ctx, c, cluster.Spec.InfrastructureRef.FullRef(cluster.Namespace)); err == nil {
 		tree.Add(cluster, clusterInfra, ObjectMetaName("ClusterInfrastructure"))
 	}
 
 	// Adds control plane
-	controlPLane, err := external.Get(ctx, c, cluster.Spec.ControlPlaneRef, cluster.Namespace)
+	controlPLane, err := external.Get(ctx, c, cluster.Spec.ControlPlaneRef.FullRef(cluster.Namespace))
 	if err == nil {
 		tree.Add(cluster, controlPLane, ObjectMetaName("ControlPlane"), GroupingObject(true))
 	}
@@ -81,11 +81,11 @@ func Discovery(ctx context.Context, c client.Client, namespace, name string, opt
 		machineMap[m.Name] = true
 
 		if visible {
-			if machineInfra, err := external.Get(ctx, c, &m.Spec.InfrastructureRef, cluster.Namespace); err == nil {
+			if machineInfra, err := external.Get(ctx, c, m.Spec.InfrastructureRef.FullRef(cluster.Namespace)); err == nil {
 				tree.Add(m, machineInfra, ObjectMetaName("MachineInfrastructure"), NoEcho(true))
 			}
 
-			if machineBootstrap, err := external.Get(ctx, c, m.Spec.Bootstrap.ConfigRef, cluster.Namespace); err == nil {
+			if machineBootstrap, err := external.Get(ctx, c, m.Spec.Bootstrap.ConfigRef.FullRef(cluster.Namespace)); err == nil {
 				tree.Add(m, machineBootstrap, ObjectMetaName("BootstrapConfig"), NoEcho(true))
 			}
 		}

@@ -132,13 +132,13 @@ func TestWatches(t *testing.T) {
 		},
 		Spec: clusterv1.MachineSpec{
 			ClusterName: testCluster.Name,
-			InfrastructureRef: corev1.ObjectReference{
+			InfrastructureRef: clusterv1.LocalObjectReference{
 				APIVersion: "infrastructure.cluster.x-k8s.io/v1beta1",
 				Kind:       "GenericInfrastructureMachine",
 				Name:       "infra-config1",
 			},
 			Bootstrap: clusterv1.Bootstrap{
-				ConfigRef: &corev1.ObjectReference{
+				ConfigRef: &clusterv1.LocalObjectReference{
 					APIVersion: "bootstrap.cluster.x-k8s.io/v1beta1",
 					Kind:       "GenericBootstrapConfig",
 					Name:       "bootstrap-config-machinereconcile",
@@ -232,20 +232,20 @@ func TestMachine_Reconcile(t *testing.T) {
 		},
 		Spec: clusterv1.MachineSpec{
 			ClusterName: testCluster.Name,
-			InfrastructureRef: corev1.ObjectReference{
+			InfrastructureRef: clusterv1.LocalObjectReference{
 				APIVersion: "infrastructure.cluster.x-k8s.io/v1beta1",
 				Kind:       "GenericInfrastructureMachine",
 				Name:       "infra-config1",
 			},
 			Bootstrap: clusterv1.Bootstrap{
-				ConfigRef: &corev1.ObjectReference{
+				ConfigRef: &clusterv1.LocalObjectReference{
 					APIVersion: "bootstrap.cluster.x-k8s.io/v1beta1",
 					Kind:       "GenericBootstrapConfig",
 					Name:       "bootstrap-config-machinereconcile",
 				},
 			}},
 		Status: clusterv1.MachineStatus{
-			NodeRef: &corev1.ObjectReference{
+			NodeRef: &clusterv1.PinnedObjectReference{
 				Name: "test",
 			},
 		},
@@ -631,7 +631,7 @@ func TestReconcileRequest(t *testing.T) {
 				},
 				Spec: clusterv1.MachineSpec{
 					ClusterName: "test-cluster",
-					InfrastructureRef: corev1.ObjectReference{
+					InfrastructureRef: clusterv1.LocalObjectReference{
 						APIVersion: "infrastructure.cluster.x-k8s.io/v1beta1",
 						Kind:       "GenericInfrastructureMachine",
 						Name:       "infra-config1",
@@ -639,7 +639,7 @@ func TestReconcileRequest(t *testing.T) {
 					Bootstrap: clusterv1.Bootstrap{DataSecretName: pointer.StringPtr("data")},
 				},
 				Status: clusterv1.MachineStatus{
-					NodeRef: &corev1.ObjectReference{
+					NodeRef: &clusterv1.PinnedObjectReference{
 						Name: "test",
 					},
 					ObservedGeneration: 1,
@@ -659,7 +659,7 @@ func TestReconcileRequest(t *testing.T) {
 				},
 				Spec: clusterv1.MachineSpec{
 					ClusterName: "test-cluster",
-					InfrastructureRef: corev1.ObjectReference{
+					InfrastructureRef: clusterv1.LocalObjectReference{
 						APIVersion: "infrastructure.cluster.x-k8s.io/v1beta1",
 						Kind:       "GenericInfrastructureMachine",
 						Name:       "infra-config1",
@@ -667,7 +667,7 @@ func TestReconcileRequest(t *testing.T) {
 					Bootstrap: clusterv1.Bootstrap{DataSecretName: pointer.StringPtr("data")},
 				},
 				Status: clusterv1.MachineStatus{
-					NodeRef: &corev1.ObjectReference{
+					NodeRef: &clusterv1.PinnedObjectReference{
 						Name: "test",
 					},
 					ObservedGeneration: 1,
@@ -691,7 +691,7 @@ func TestReconcileRequest(t *testing.T) {
 				},
 				Spec: clusterv1.MachineSpec{
 					ClusterName: "test-cluster",
-					InfrastructureRef: corev1.ObjectReference{
+					InfrastructureRef: clusterv1.LocalObjectReference{
 						APIVersion: "infrastructure.cluster.x-k8s.io/v1beta1",
 						Kind:       "GenericInfrastructureMachine",
 						Name:       "infra-config1",
@@ -800,13 +800,13 @@ func TestMachineConditions(t *testing.T) {
 		Spec: clusterv1.MachineSpec{
 			ProviderID:  pointer.StringPtr("test://id-1"),
 			ClusterName: "test-cluster",
-			InfrastructureRef: corev1.ObjectReference{
+			InfrastructureRef: clusterv1.LocalObjectReference{
 				APIVersion: "infrastructure.cluster.x-k8s.io/v1beta1",
 				Kind:       "GenericInfrastructureMachine",
 				Name:       "infra-config1",
 			},
 			Bootstrap: clusterv1.Bootstrap{
-				ConfigRef: &corev1.ObjectReference{
+				ConfigRef: &clusterv1.LocalObjectReference{
 					APIVersion: "bootstrap.cluster.x-k8s.io/v1beta1",
 					Kind:       "GenericBootstrapConfig",
 					Name:       "bootstrap-config1",
@@ -814,7 +814,7 @@ func TestMachineConditions(t *testing.T) {
 			},
 		},
 		Status: clusterv1.MachineStatus{
-			NodeRef: &corev1.ObjectReference{
+			NodeRef: &clusterv1.PinnedObjectReference{
 				Name: "test",
 			},
 			ObservedGeneration: 1,
@@ -1003,7 +1003,7 @@ func TestReconcileDeleteExternal(t *testing.T) {
 		Spec: clusterv1.MachineSpec{
 			ClusterName: "test-cluster",
 			Bootstrap: clusterv1.Bootstrap{
-				ConfigRef: &corev1.ObjectReference{
+				ConfigRef: &clusterv1.LocalObjectReference{
 					APIVersion: "bootstrap.cluster.x-k8s.io/v1beta1",
 					Kind:       "BootstrapConfig",
 					Name:       "delete-bootstrap",
@@ -1085,7 +1085,7 @@ func TestRemoveMachineFinalizerAfterDeleteReconcile(t *testing.T) {
 		},
 		Spec: clusterv1.MachineSpec{
 			ClusterName: "test-cluster",
-			InfrastructureRef: corev1.ObjectReference{
+			InfrastructureRef: clusterv1.LocalObjectReference{
 				APIVersion: "infrastructure.cluster.x-k8s.io/v1beta1",
 				Kind:       "GenericInfrastructureMachine",
 				Name:       "infra-config1",
@@ -1127,7 +1127,7 @@ func TestIsNodeDrainedAllowed(t *testing.T) {
 				},
 				Spec: clusterv1.MachineSpec{
 					ClusterName:       "test-cluster",
-					InfrastructureRef: corev1.ObjectReference{},
+					InfrastructureRef: clusterv1.LocalObjectReference{},
 					Bootstrap:         clusterv1.Bootstrap{DataSecretName: pointer.StringPtr("data")},
 				},
 				Status: clusterv1.MachineStatus{},
@@ -1144,7 +1144,7 @@ func TestIsNodeDrainedAllowed(t *testing.T) {
 				},
 				Spec: clusterv1.MachineSpec{
 					ClusterName:       "test-cluster",
-					InfrastructureRef: corev1.ObjectReference{},
+					InfrastructureRef: clusterv1.LocalObjectReference{},
 					Bootstrap:         clusterv1.Bootstrap{DataSecretName: pointer.StringPtr("data")},
 					NodeDrainTimeout:  &metav1.Duration{Duration: time.Second * 60},
 				},
@@ -1171,7 +1171,7 @@ func TestIsNodeDrainedAllowed(t *testing.T) {
 				},
 				Spec: clusterv1.MachineSpec{
 					ClusterName:       "test-cluster",
-					InfrastructureRef: corev1.ObjectReference{},
+					InfrastructureRef: clusterv1.LocalObjectReference{},
 					Bootstrap:         clusterv1.Bootstrap{DataSecretName: pointer.StringPtr("data")},
 					NodeDrainTimeout:  &metav1.Duration{Duration: time.Second * 60},
 				},
@@ -1197,7 +1197,7 @@ func TestIsNodeDrainedAllowed(t *testing.T) {
 				},
 				Spec: clusterv1.MachineSpec{
 					ClusterName:       "test-cluster",
-					InfrastructureRef: corev1.ObjectReference{},
+					InfrastructureRef: clusterv1.LocalObjectReference{},
 					Bootstrap:         clusterv1.Bootstrap{DataSecretName: pointer.StringPtr("data")},
 				},
 				Status: clusterv1.MachineStatus{
@@ -1258,7 +1258,7 @@ func TestIsDeleteNodeAllowed(t *testing.T) {
 				},
 				Spec: clusterv1.MachineSpec{
 					ClusterName:       "test-cluster",
-					InfrastructureRef: corev1.ObjectReference{},
+					InfrastructureRef: clusterv1.LocalObjectReference{},
 					Bootstrap:         clusterv1.Bootstrap{DataSecretName: pointer.StringPtr("data")},
 				},
 				Status: clusterv1.MachineStatus{},
@@ -1284,11 +1284,11 @@ func TestIsDeleteNodeAllowed(t *testing.T) {
 				},
 				Spec: clusterv1.MachineSpec{
 					ClusterName:       "test-cluster",
-					InfrastructureRef: corev1.ObjectReference{},
+					InfrastructureRef: clusterv1.LocalObjectReference{},
 					Bootstrap:         clusterv1.Bootstrap{DataSecretName: pointer.StringPtr("data")},
 				},
 				Status: clusterv1.MachineStatus{
-					NodeRef: &corev1.ObjectReference{
+					NodeRef: &clusterv1.PinnedObjectReference{
 						Name: "test",
 					},
 				},
@@ -1316,11 +1316,11 @@ func TestIsDeleteNodeAllowed(t *testing.T) {
 				},
 				Spec: clusterv1.MachineSpec{
 					ClusterName:       "test-cluster",
-					InfrastructureRef: corev1.ObjectReference{},
+					InfrastructureRef: clusterv1.LocalObjectReference{},
 					Bootstrap:         clusterv1.Bootstrap{DataSecretName: pointer.StringPtr("data")},
 				},
 				Status: clusterv1.MachineStatus{
-					NodeRef: &corev1.ObjectReference{
+					NodeRef: &clusterv1.PinnedObjectReference{
 						Name: "test",
 					},
 				},
@@ -1346,11 +1346,11 @@ func TestIsDeleteNodeAllowed(t *testing.T) {
 				},
 				Spec: clusterv1.MachineSpec{
 					ClusterName:       "test-cluster",
-					InfrastructureRef: corev1.ObjectReference{},
+					InfrastructureRef: clusterv1.LocalObjectReference{},
 					Bootstrap:         clusterv1.Bootstrap{DataSecretName: pointer.StringPtr("data")},
 				},
 				Status: clusterv1.MachineStatus{
-					NodeRef: &corev1.ObjectReference{
+					NodeRef: &clusterv1.PinnedObjectReference{
 						Name: "test",
 					},
 				},
@@ -1377,11 +1377,10 @@ func TestIsDeleteNodeAllowed(t *testing.T) {
 					Namespace: metav1.NamespaceDefault,
 				},
 				Spec: clusterv1.ClusterSpec{
-					ControlPlaneRef: &corev1.ObjectReference{
+					ControlPlaneRef: &clusterv1.LocalObjectReference{
 						APIVersion: "controlplane.cluster.x-k8s.io/v1beta1",
 						Kind:       "AWSManagedControlPlane",
 						Name:       "test-cluster",
-						Namespace:  "test-cluster",
 					},
 				},
 			},
@@ -1396,11 +1395,11 @@ func TestIsDeleteNodeAllowed(t *testing.T) {
 				},
 				Spec: clusterv1.MachineSpec{
 					ClusterName:       "test-cluster",
-					InfrastructureRef: corev1.ObjectReference{},
+					InfrastructureRef: clusterv1.LocalObjectReference{},
 					Bootstrap:         clusterv1.Bootstrap{DataSecretName: pointer.StringPtr("data")},
 				},
 				Status: clusterv1.MachineStatus{
-					NodeRef: &corev1.ObjectReference{
+					NodeRef: &clusterv1.PinnedObjectReference{
 						Name: "test",
 					},
 				},
@@ -1415,11 +1414,10 @@ func TestIsDeleteNodeAllowed(t *testing.T) {
 					Namespace: metav1.NamespaceDefault,
 				},
 				Spec: clusterv1.ClusterSpec{
-					ControlPlaneRef: &corev1.ObjectReference{
+					ControlPlaneRef: &clusterv1.LocalObjectReference{
 						APIVersion: "controlplane.cluster.x-k8s.io/v1beta1",
 						Kind:       "AWSManagedControlPlane",
 						Name:       "test-cluster-2",
-						Namespace:  "test-cluster",
 					},
 				},
 			},
@@ -1434,11 +1432,11 @@ func TestIsDeleteNodeAllowed(t *testing.T) {
 				},
 				Spec: clusterv1.MachineSpec{
 					ClusterName:       "test-cluster",
-					InfrastructureRef: corev1.ObjectReference{},
+					InfrastructureRef: clusterv1.LocalObjectReference{},
 					Bootstrap:         clusterv1.Bootstrap{DataSecretName: pointer.StringPtr("data")},
 				},
 				Status: clusterv1.MachineStatus{
-					NodeRef: &corev1.ObjectReference{
+					NodeRef: &clusterv1.PinnedObjectReference{
 						Name: "test",
 					},
 				},
@@ -1453,11 +1451,10 @@ func TestIsDeleteNodeAllowed(t *testing.T) {
 					Namespace: metav1.NamespaceDefault,
 				},
 				Spec: clusterv1.ClusterSpec{
-					ControlPlaneRef: &corev1.ObjectReference{
+					ControlPlaneRef: &clusterv1.LocalObjectReference{
 						APIVersion: "controlplane.cluster.x-k8s.io/v1beta1",
 						Kind:       "AWSManagedControlPlane",
 						Name:       "test-cluster-3",
-						Namespace:  "test-cluster",
 					},
 				},
 			},
@@ -1472,11 +1469,11 @@ func TestIsDeleteNodeAllowed(t *testing.T) {
 				},
 				Spec: clusterv1.MachineSpec{
 					ClusterName:       "test-cluster",
-					InfrastructureRef: corev1.ObjectReference{},
+					InfrastructureRef: clusterv1.LocalObjectReference{},
 					Bootstrap:         clusterv1.Bootstrap{DataSecretName: pointer.StringPtr("data")},
 				},
 				Status: clusterv1.MachineStatus{
-					NodeRef: &corev1.ObjectReference{
+					NodeRef: &clusterv1.PinnedObjectReference{
 						Name: "test",
 					},
 				},
@@ -1534,11 +1531,11 @@ func TestIsDeleteNodeAllowed(t *testing.T) {
 				},
 				Spec: clusterv1.MachineSpec{
 					ClusterName:       "test-cluster",
-					InfrastructureRef: corev1.ObjectReference{},
+					InfrastructureRef: clusterv1.LocalObjectReference{},
 					Bootstrap:         clusterv1.Bootstrap{DataSecretName: pointer.StringPtr("data")},
 				},
 				Status: clusterv1.MachineStatus{
-					NodeRef: &corev1.ObjectReference{
+					NodeRef: &clusterv1.PinnedObjectReference{
 						Name: "test1",
 					},
 				},
@@ -1554,11 +1551,11 @@ func TestIsDeleteNodeAllowed(t *testing.T) {
 				},
 				Spec: clusterv1.MachineSpec{
 					ClusterName:       "test-cluster",
-					InfrastructureRef: corev1.ObjectReference{},
+					InfrastructureRef: clusterv1.LocalObjectReference{},
 					Bootstrap:         clusterv1.Bootstrap{DataSecretName: pointer.StringPtr("data")},
 				},
 				Status: clusterv1.MachineStatus{
-					NodeRef: &corev1.ObjectReference{
+					NodeRef: &clusterv1.PinnedObjectReference{
 						Name: "test2",
 					},
 				},
@@ -1722,13 +1719,13 @@ func TestNodeToMachine(t *testing.T) {
 		},
 		Spec: clusterv1.MachineSpec{
 			ClusterName: testCluster.Name,
-			InfrastructureRef: corev1.ObjectReference{
+			InfrastructureRef: clusterv1.LocalObjectReference{
 				APIVersion: "infrastructure.cluster.x-k8s.io/v1beta1",
 				Kind:       "GenericInfrastructureMachine",
 				Name:       "infra-config1",
 			},
 			Bootstrap: clusterv1.Bootstrap{
-				ConfigRef: &corev1.ObjectReference{
+				ConfigRef: &clusterv1.LocalObjectReference{
 					APIVersion: "bootstrap.cluster.x-k8s.io/v1beta1",
 					Kind:       "GenericBootstrapConfig",
 					Name:       "bootstrap-config-machinereconcile",
@@ -1761,13 +1758,13 @@ func TestNodeToMachine(t *testing.T) {
 		},
 		Spec: clusterv1.MachineSpec{
 			ClusterName: testCluster.Name,
-			InfrastructureRef: corev1.ObjectReference{
+			InfrastructureRef: clusterv1.LocalObjectReference{
 				APIVersion: "infrastructure.cluster.x-k8s.io/v1beta1",
 				Kind:       "GenericInfrastructureMachine",
 				Name:       "infra-config2",
 			},
 			Bootstrap: clusterv1.Bootstrap{
-				ConfigRef: &corev1.ObjectReference{
+				ConfigRef: &clusterv1.LocalObjectReference{
 					APIVersion: "bootstrap.cluster.x-k8s.io/v1beta1",
 					Kind:       "GenericBootstrapConfig",
 					Name:       "bootstrap-config-machinereconcile",

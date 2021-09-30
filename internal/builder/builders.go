@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"strings"
 
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
@@ -78,10 +77,10 @@ func (c *ClusterBuilder) Build() *clusterv1.Cluster {
 		},
 	}
 	if c.infrastructureCluster != nil {
-		obj.Spec.InfrastructureRef = objToRef(c.infrastructureCluster)
+		obj.Spec.InfrastructureRef = objToRef(c.infrastructureCluster).LocalRef()
 	}
 	if c.controlPlane != nil {
-		obj.Spec.ControlPlaneRef = objToRef(c.controlPlane)
+		obj.Spec.ControlPlaneRef = objToRef(c.controlPlane).LocalRef()
 	}
 	return obj
 }
@@ -156,7 +155,7 @@ func (c *ClusterClassBuilder) Build() *clusterv1.ClusterClass {
 	}
 	if c.infrastructureClusterTemplate != nil {
 		obj.Spec.Infrastructure = clusterv1.LocalObjectTemplate{
-			Ref: objToRef(c.infrastructureClusterTemplate),
+			Ref: objToRef(c.infrastructureClusterTemplate).LocalRef(),
 		}
 	}
 	if c.controlPlaneMetadata != nil {
@@ -164,12 +163,12 @@ func (c *ClusterClassBuilder) Build() *clusterv1.ClusterClass {
 	}
 	if c.controlPlaneTemplate != nil {
 		obj.Spec.ControlPlane.LocalObjectTemplate = clusterv1.LocalObjectTemplate{
-			Ref: objToRef(c.controlPlaneTemplate),
+			Ref: objToRef(c.controlPlaneTemplate).LocalRef(),
 		}
 	}
 	if c.controlPlaneInfrastructureMachineTemplate != nil {
 		obj.Spec.ControlPlane.MachineInfrastructure = &clusterv1.LocalObjectTemplate{
-			Ref: objToRef(c.controlPlaneInfrastructureMachineTemplate),
+			Ref: objToRef(c.controlPlaneInfrastructureMachineTemplate).LocalRef(),
 		}
 	}
 	obj.Spec.Workers.MachineDeployments = c.machineDeploymentClasses
@@ -235,10 +234,10 @@ func (m *MachineDeploymentClassBuilder) Build() *clusterv1.MachineDeploymentClas
 				Annotations: m.annotations,
 			},
 			Bootstrap: clusterv1.LocalObjectTemplate{
-				Ref: objToRef(m.bootstrapTemplate),
+				Ref: objToRef(m.bootstrapTemplate).LocalRef(),
 			},
 			Infrastructure: clusterv1.LocalObjectTemplate{
-				Ref: objToRef(m.infrastructureMachineTemplate),
+				Ref: objToRef(m.infrastructureMachineTemplate).LocalRef(),
 			},
 		},
 	}
@@ -569,10 +568,10 @@ func (m *MachineDeploymentBuilder) Build() *clusterv1.MachineDeployment {
 	}
 	obj.Spec.Replicas = m.replicas
 	if m.bootstrapTemplate != nil {
-		obj.Spec.Template.Spec.Bootstrap.ConfigRef = objToRef(m.bootstrapTemplate)
+		obj.Spec.Template.Spec.Bootstrap.ConfigRef = objToRef(m.bootstrapTemplate).LocalRef()
 	}
 	if m.infrastructureTemplate != nil {
-		obj.Spec.Template.Spec.InfrastructureRef = *objToRef(m.infrastructureTemplate)
+		obj.Spec.Template.Spec.InfrastructureRef = *objToRef(m.infrastructureTemplate).LocalRef()
 	}
 	if m.status != nil {
 		obj.Status = *m.status
@@ -637,18 +636,18 @@ func (m *MachineSetBuilder) Build() *clusterv1.MachineSet {
 	}
 	obj.Spec.Replicas = m.replicas
 	if m.bootstrapTemplate != nil {
-		obj.Spec.Template.Spec.Bootstrap.ConfigRef = objToRef(m.bootstrapTemplate)
+		obj.Spec.Template.Spec.Bootstrap.ConfigRef = objToRef(m.bootstrapTemplate).LocalRef()
 	}
 	if m.infrastructureTemplate != nil {
-		obj.Spec.Template.Spec.InfrastructureRef = *objToRef(m.infrastructureTemplate)
+		obj.Spec.Template.Spec.InfrastructureRef = *objToRef(m.infrastructureTemplate).LocalRef()
 	}
 	return obj
 }
 
 // objToRef returns a reference to the given object.
-func objToRef(obj client.Object) *corev1.ObjectReference {
+func objToRef(obj client.Object) *clusterv1.ObjectReference {
 	gvk := obj.GetObjectKind().GroupVersionKind()
-	return &corev1.ObjectReference{
+	return &clusterv1.ObjectReference{
 		Kind:       gvk.Kind,
 		APIVersion: gvk.GroupVersion().String(),
 		Namespace:  obj.GetNamespace(),

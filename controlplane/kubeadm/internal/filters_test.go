@@ -21,6 +21,7 @@ import (
 
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
@@ -302,9 +303,8 @@ func TestMatchInitOrJoinConfiguration(t *testing.T) {
 			},
 			Spec: clusterv1.MachineSpec{
 				Bootstrap: clusterv1.Bootstrap{
-					ConfigRef: &corev1.ObjectReference{
+					ConfigRef: &clusterv1.LocalObjectReference{
 						Kind:       "KubeadmConfig",
-						Namespace:  "default",
 						Name:       "test",
 						APIVersion: bootstrapv1.GroupVersion.String(),
 					},
@@ -354,9 +354,8 @@ func TestMatchInitOrJoinConfiguration(t *testing.T) {
 			},
 			Spec: clusterv1.MachineSpec{
 				Bootstrap: clusterv1.Bootstrap{
-					ConfigRef: &corev1.ObjectReference{
+					ConfigRef: &clusterv1.LocalObjectReference{
 						Kind:       "KubeadmConfig",
-						Namespace:  "default",
 						Name:       "test",
 						APIVersion: bootstrapv1.GroupVersion.String(),
 					},
@@ -402,9 +401,8 @@ func TestMatchInitOrJoinConfiguration(t *testing.T) {
 			},
 			Spec: clusterv1.MachineSpec{
 				Bootstrap: clusterv1.Bootstrap{
-					ConfigRef: &corev1.ObjectReference{
+					ConfigRef: &clusterv1.LocalObjectReference{
 						Kind:       "KubeadmConfig",
-						Namespace:  "default",
 						Name:       "test",
 						APIVersion: bootstrapv1.GroupVersion.String(),
 					},
@@ -454,9 +452,8 @@ func TestMatchInitOrJoinConfiguration(t *testing.T) {
 			},
 			Spec: clusterv1.MachineSpec{
 				Bootstrap: clusterv1.Bootstrap{
-					ConfigRef: &corev1.ObjectReference{
+					ConfigRef: &clusterv1.LocalObjectReference{
 						Kind:       "KubeadmConfig",
-						Namespace:  "default",
 						Name:       "test",
 						APIVersion: bootstrapv1.GroupVersion.String(),
 					},
@@ -503,9 +500,8 @@ func TestMatchInitOrJoinConfiguration(t *testing.T) {
 			},
 			Spec: clusterv1.MachineSpec{
 				Bootstrap: clusterv1.Bootstrap{
-					ConfigRef: &corev1.ObjectReference{
+					ConfigRef: &clusterv1.LocalObjectReference{
 						Kind:       "KubeadmConfig",
-						Namespace:  "default",
 						Name:       "test",
 						APIVersion: bootstrapv1.GroupVersion.String(),
 					},
@@ -602,9 +598,8 @@ func TestMatchesKubeadmBootstrapConfig(t *testing.T) {
 			},
 			Spec: clusterv1.MachineSpec{
 				Bootstrap: clusterv1.Bootstrap{
-					ConfigRef: &corev1.ObjectReference{
+					ConfigRef: &clusterv1.LocalObjectReference{
 						Kind:       "KubeadmConfig",
-						Namespace:  "default",
 						Name:       "test",
 						APIVersion: bootstrapv1.GroupVersion.String(),
 					},
@@ -655,9 +650,8 @@ func TestMatchesKubeadmBootstrapConfig(t *testing.T) {
 			},
 			Spec: clusterv1.MachineSpec{
 				Bootstrap: clusterv1.Bootstrap{
-					ConfigRef: &corev1.ObjectReference{
+					ConfigRef: &clusterv1.LocalObjectReference{
 						Kind:       "KubeadmConfig",
-						Namespace:  "default",
 						Name:       "test",
 						APIVersion: bootstrapv1.GroupVersion.String(),
 					},
@@ -704,9 +698,8 @@ func TestMatchesKubeadmBootstrapConfig(t *testing.T) {
 			},
 			Spec: clusterv1.MachineSpec{
 				Bootstrap: clusterv1.Bootstrap{
-					ConfigRef: &corev1.ObjectReference{
+					ConfigRef: &clusterv1.LocalObjectReference{
 						Kind:       "KubeadmConfig",
-						Namespace:  "default",
 						Name:       "test",
 						APIVersion: bootstrapv1.GroupVersion.String(),
 					},
@@ -757,9 +750,8 @@ func TestMatchesKubeadmBootstrapConfig(t *testing.T) {
 			},
 			Spec: clusterv1.MachineSpec{
 				Bootstrap: clusterv1.Bootstrap{
-					ConfigRef: &corev1.ObjectReference{
+					ConfigRef: &clusterv1.LocalObjectReference{
 						Kind:       "KubeadmConfig",
-						Namespace:  "default",
 						Name:       "test",
 						APIVersion: bootstrapv1.GroupVersion.String(),
 					},
@@ -807,9 +799,8 @@ func TestMatchesKubeadmBootstrapConfig(t *testing.T) {
 			},
 			Spec: clusterv1.MachineSpec{
 				Bootstrap: clusterv1.Bootstrap{
-					ConfigRef: &corev1.ObjectReference{
+					ConfigRef: &clusterv1.LocalObjectReference{
 						Kind:       "KubeadmConfig",
-						Namespace:  "default",
 						Name:       "test",
 						APIVersion: bootstrapv1.GroupVersion.String(),
 					},
@@ -865,9 +856,8 @@ func TestMatchesKubeadmBootstrapConfig(t *testing.T) {
 			},
 			Spec: clusterv1.MachineSpec{
 				Bootstrap: clusterv1.Bootstrap{
-					ConfigRef: &corev1.ObjectReference{
+					ConfigRef: &clusterv1.LocalObjectReference{
 						Kind:       "KubeadmConfig",
-						Namespace:  "default",
 						Name:       "test",
 						APIVersion: bootstrapv1.GroupVersion.String(),
 					},
@@ -937,9 +927,8 @@ func TestMatchesTemplateClonedFrom(t *testing.T) {
 		kcp := &controlplanev1.KubeadmControlPlane{}
 		machine := &clusterv1.Machine{
 			Spec: clusterv1.MachineSpec{
-				InfrastructureRef: corev1.ObjectReference{
+				InfrastructureRef: clusterv1.LocalObjectReference{
 					Kind:       "KubeadmConfig",
-					Namespace:  "default",
 					Name:       "test",
 					APIVersion: bootstrapv1.GroupVersion.String(),
 				},
@@ -965,9 +954,8 @@ func TestMatchesTemplateClonedFrom(t *testing.T) {
 							"test": "labels",
 						},
 					},
-					InfrastructureRef: corev1.ObjectReference{
+					InfrastructureRef: v1.ObjectReference{
 						Kind:       "GenericMachineTemplate",
-						Namespace:  "default",
 						Name:       "infra-foo",
 						APIVersion: "generic.io/v1",
 					},
@@ -976,9 +964,8 @@ func TestMatchesTemplateClonedFrom(t *testing.T) {
 		}
 		m := &clusterv1.Machine{
 			Spec: clusterv1.MachineSpec{
-				InfrastructureRef: corev1.ObjectReference{
+				InfrastructureRef: clusterv1.LocalObjectReference{
 					Kind:       "GenericMachine",
-					Namespace:  "default",
 					Name:       "infra-foo",
 					APIVersion: "generic.io/v1",
 				},
@@ -1064,11 +1051,10 @@ func TestMatchesTemplateClonedFrom_WithClonedFromAnnotations(t *testing.T) {
 	}
 	machine := &clusterv1.Machine{
 		Spec: clusterv1.MachineSpec{
-			InfrastructureRef: corev1.ObjectReference{
+			InfrastructureRef: clusterv1.LocalObjectReference{
 				APIVersion: "infrastructure.cluster.x-k8s.io/v1beta1",
 				Kind:       "InfrastructureMachine",
 				Name:       "infra-config1",
-				Namespace:  "default",
 			},
 		},
 	}

@@ -148,11 +148,14 @@ func (r *MachineSetReconciler) reconcileDelete(ctx context.Context, ms *clusterv
 	}
 
 	// Delete unused templates.
-	ref := ms.Spec.Template.Spec.Bootstrap.ConfigRef
+	var ref *clusterv1.ObjectReference
+	if ms.Spec.Template.Spec.Bootstrap.ConfigRef != nil {
+		ref = ms.Spec.Template.Spec.Bootstrap.ConfigRef.FullRef(ms.Namespace)
+	}
 	if err := deleteTemplateIfUnused(ctx, r.Client, templatesInUse, ref); err != nil {
 		return ctrl.Result{}, errors.Wrapf(err, "failed to delete bootstrap template for %s", tlog.KObj{Obj: ms})
 	}
-	ref = &ms.Spec.Template.Spec.InfrastructureRef
+	ref = ms.Spec.Template.Spec.InfrastructureRef.FullRef(ms.Namespace)
 	if err := deleteTemplateIfUnused(ctx, r.Client, templatesInUse, ref); err != nil {
 		return ctrl.Result{}, errors.Wrapf(err, "failed to delete infrastructure template for %s", tlog.KObj{Obj: ms})
 	}

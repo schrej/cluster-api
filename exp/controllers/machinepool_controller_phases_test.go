@@ -65,13 +65,13 @@ func TestReconcileMachinePoolPhases(t *testing.T) {
 			Template: clusterv1.MachineTemplateSpec{
 				Spec: clusterv1.MachineSpec{
 					Bootstrap: clusterv1.Bootstrap{
-						ConfigRef: &corev1.ObjectReference{
+						ConfigRef: &clusterv1.LocalObjectReference{
 							APIVersion: "bootstrap.cluster.x-k8s.io/v1beta1",
 							Kind:       "BootstrapConfig",
 							Name:       "bootstrap-config1",
 						},
 					},
-					InfrastructureRef: corev1.ObjectReference{
+					InfrastructureRef: clusterv1.LocalObjectReference{
 						APIVersion: "infrastructure.cluster.x-k8s.io/v1beta1",
 						Kind:       "InfrastructureConfig",
 						Name:       "infra-config1",
@@ -483,7 +483,7 @@ func TestReconcileMachinePoolBootstrap(t *testing.T) {
 			Template: clusterv1.MachineTemplateSpec{
 				Spec: clusterv1.MachineSpec{
 					Bootstrap: clusterv1.Bootstrap{
-						ConfigRef: &corev1.ObjectReference{
+						ConfigRef: &clusterv1.LocalObjectReference{
 							APIVersion: "bootstrap.cluster.x-k8s.io/v1beta1",
 							Kind:       "BootstrapConfig",
 							Name:       "bootstrap-config1",
@@ -624,7 +624,7 @@ func TestReconcileMachinePoolBootstrap(t *testing.T) {
 					Template: clusterv1.MachineTemplateSpec{
 						Spec: clusterv1.MachineSpec{
 							Bootstrap: clusterv1.Bootstrap{
-								ConfigRef: &corev1.ObjectReference{
+								ConfigRef: &clusterv1.LocalObjectReference{
 									APIVersion: "bootstrap.cluster.x-k8s.io/v1beta1",
 									Kind:       "BootstrapConfig",
 									Name:       "bootstrap-config1",
@@ -668,7 +668,7 @@ func TestReconcileMachinePoolBootstrap(t *testing.T) {
 					Template: clusterv1.MachineTemplateSpec{
 						Spec: clusterv1.MachineSpec{
 							Bootstrap: clusterv1.Bootstrap{
-								ConfigRef: &corev1.ObjectReference{
+								ConfigRef: &clusterv1.LocalObjectReference{
 									APIVersion: "bootstrap.cluster.x-k8s.io/v1beta1",
 									Kind:       "BootstrapConfig",
 									Name:       "bootstrap-config1",
@@ -730,13 +730,13 @@ func TestReconcileMachinePoolInfrastructure(t *testing.T) {
 			Template: clusterv1.MachineTemplateSpec{
 				Spec: clusterv1.MachineSpec{
 					Bootstrap: clusterv1.Bootstrap{
-						ConfigRef: &corev1.ObjectReference{
+						ConfigRef: &clusterv1.LocalObjectReference{
 							APIVersion: "bootstrap.cluster.x-k8s.io/v1beta1",
 							Kind:       "BootstrapConfig",
 							Name:       "bootstrap-config1",
 						},
 					},
-					InfrastructureRef: corev1.ObjectReference{
+					InfrastructureRef: clusterv1.LocalObjectReference{
 						APIVersion: "infrastructure.cluster.x-k8s.io/v1beta1",
 						Kind:       "InfrastructureConfig",
 						Name:       "infra-config1",
@@ -809,13 +809,13 @@ func TestReconcileMachinePoolInfrastructure(t *testing.T) {
 					Template: clusterv1.MachineTemplateSpec{
 						Spec: clusterv1.MachineSpec{
 							Bootstrap: clusterv1.Bootstrap{
-								ConfigRef: &corev1.ObjectReference{
+								ConfigRef: &clusterv1.LocalObjectReference{
 									APIVersion: "bootstrap.cluster.x-k8s.io/v1beta1",
 									Kind:       "BootstrapConfig",
 									Name:       "bootstrap-config1",
 								},
 							},
-							InfrastructureRef: corev1.ObjectReference{
+							InfrastructureRef: clusterv1.LocalObjectReference{
 								APIVersion: "infrastructure.cluster.x-k8s.io/v1beta1",
 								Kind:       "InfrastructureConfig",
 								Name:       "infra-config1",

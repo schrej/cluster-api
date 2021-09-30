@@ -20,71 +20,18 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilfeature "k8s.io/component-base/featuregate/testing"
 	"sigs.k8s.io/cluster-api/feature"
-
-	utildefaulting "sigs.k8s.io/cluster-api/util/defaulting"
 )
-
-func TestClusterClassDefaultNamespaces(t *testing.T) {
-	// NOTE: ClusterTopology feature flag is disabled by default, thus preventing to create or update ClusterClasses.
-	// Enabling the feature flag temporarily for this test.
-	defer utilfeature.SetFeatureGateDuringTest(t, feature.Gates, feature.ClusterTopology, true)()
-
-	namespace := "default"
-	ref := &corev1.ObjectReference{
-		APIVersion: "foo",
-		Kind:       "barTemplate",
-		Name:       "baz",
-	}
-	in := &ClusterClass{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: namespace,
-		},
-		Spec: ClusterClassSpec{
-			Infrastructure: LocalObjectTemplate{Ref: ref},
-			ControlPlane: ControlPlaneClass{
-				LocalObjectTemplate:   LocalObjectTemplate{Ref: ref},
-				MachineInfrastructure: &LocalObjectTemplate{Ref: ref},
-			},
-			Workers: WorkersClass{
-				MachineDeployments: []MachineDeploymentClass{
-					{
-						Class: "aa",
-						Template: MachineDeploymentClassTemplate{
-							Bootstrap:      LocalObjectTemplate{Ref: ref},
-							Infrastructure: LocalObjectTemplate{Ref: ref},
-						},
-					},
-				},
-			},
-		},
-	}
-
-	t.Run("for ClusterClass", utildefaulting.DefaultValidateTest(in))
-	in.Default()
-
-	// Namespace defaulted on references
-	g := NewWithT(t)
-	g.Expect(in.Spec.Infrastructure.Ref.Namespace).To(Equal(namespace))
-	g.Expect(in.Spec.ControlPlane.Ref.Namespace).To(Equal(namespace))
-	g.Expect(in.Spec.ControlPlane.MachineInfrastructure.Ref.Namespace).To(Equal(namespace))
-	for i := range in.Spec.Workers.MachineDeployments {
-		g.Expect(in.Spec.Workers.MachineDeployments[i].Template.Bootstrap.Ref.Namespace).To(Equal(namespace))
-		g.Expect(in.Spec.Workers.MachineDeployments[i].Template.Infrastructure.Ref.Namespace).To(Equal(namespace))
-	}
-}
 
 func TestClusterClassValidationFeatureGated(t *testing.T) {
 	// NOTE: ClusterTopology feature flag is disabled by default, thus preventing to create or update ClusterClasses.
 
-	ref := &corev1.ObjectReference{
+	ref := &LocalObjectReference{
 		APIVersion: "foo",
 		Kind:       "barTemplate",
 		Name:       "baz",
-		Namespace:  "default",
 	}
 	tests := []struct {
 		name      string
@@ -186,46 +133,34 @@ func TestClusterClassValidation(t *testing.T) {
 	// Enabling the feature flag temporarily for this test.
 	defer utilfeature.SetFeatureGateDuringTest(t, feature.Gates, feature.ClusterTopology, true)()
 
-	ref := &corev1.ObjectReference{
+	ref := &LocalObjectReference{
 		APIVersion: "group.test.io/foo",
 		Kind:       "barTemplate",
 		Name:       "baz",
-		Namespace:  "default",
 	}
-	refInAnotherNamespace := &corev1.ObjectReference{
-		APIVersion: "group.test.io/foo",
-		Kind:       "barTemplate",
-		Name:       "baz",
-		Namespace:  "another-namespace",
-	}
-	refBadTemplate := &corev1.ObjectReference{
+	refBadTemplate := &LocalObjectReference{
 		APIVersion: "group.test.io/foo",
 		Kind:       "bar",
 		Name:       "baz",
-		Namespace:  "default",
 	}
-	refBadAPIVersion := &corev1.ObjectReference{
+	refBadAPIVersion := &LocalObjectReference{
 		APIVersion: "group/test.io/v1/foo",
 		Kind:       "barTemplate",
 		Name:       "baz",
-		Namespace:  "default",
 	}
-	refEmptyName := &corev1.ObjectReference{
+	refEmptyName := &LocalObjectReference{
 		APIVersion: "group.test.io/foo",
-		Namespace:  "default",
 		Kind:       "barTemplate",
 	}
-	incompatibleRef := &corev1.ObjectReference{
+	incompatibleRef := &LocalObjectReference{
 		APIVersion: "group.test.io/foo",
 		Kind:       "another-barTemplate",
 		Name:       "baz",
-		Namespace:  "default",
 	}
-	compatibleRef := &corev1.ObjectReference{
+	compatibleRef := &LocalObjectReference{
 		APIVersion: "group.test.io/another-foo",
 		Kind:       "barTemplate",
 		Name:       "another-baz",
-		Namespace:  "default",
 	}
 
 	tests := []struct {
@@ -397,139 +332,6 @@ func TestClusterClassValidation(t *testing.T) {
 								Template: MachineDeploymentClassTemplate{
 									Bootstrap:      LocalObjectTemplate{Ref: ref},
 									Infrastructure: LocalObjectTemplate{Ref: refEmptyName},
-								},
-							},
-						},
-					},
-				},
-			},
-			expectErr: true,
-		},
-
-		// inconsistent namespace in ref tests
-		{
-			name: "create fail if infrastructure has inconsistent namespace",
-			in: &ClusterClass{
-				ObjectMeta: metav1.ObjectMeta{
-					Namespace: "default",
-				},
-				Spec: ClusterClassSpec{
-					Infrastructure: LocalObjectTemplate{Ref: refInAnotherNamespace},
-					ControlPlane: ControlPlaneClass{
-						LocalObjectTemplate: LocalObjectTemplate{Ref: ref},
-					},
-					Workers: WorkersClass{
-						MachineDeployments: []MachineDeploymentClass{
-							{
-								Class: "aa",
-								Template: MachineDeploymentClassTemplate{
-									Bootstrap:      LocalObjectTemplate{Ref: ref},
-									Infrastructure: LocalObjectTemplate{Ref: ref},
-								},
-							},
-						},
-					},
-				},
-			},
-			expectErr: true,
-		},
-		{
-			name: "create fail if control plane has inconsistent namespace",
-			in: &ClusterClass{
-				ObjectMeta: metav1.ObjectMeta{
-					Namespace: "default",
-				},
-				Spec: ClusterClassSpec{
-					Infrastructure: LocalObjectTemplate{Ref: ref},
-					ControlPlane: ControlPlaneClass{
-						LocalObjectTemplate: LocalObjectTemplate{Ref: refInAnotherNamespace},
-					},
-					Workers: WorkersClass{
-						MachineDeployments: []MachineDeploymentClass{
-							{
-								Class: "aa",
-								Template: MachineDeploymentClassTemplate{
-									Bootstrap:      LocalObjectTemplate{Ref: ref},
-									Infrastructure: LocalObjectTemplate{Ref: ref},
-								},
-							},
-						},
-					},
-				},
-			},
-			expectErr: true,
-		},
-		{
-			name: "create fail if control plane class machineinfrastructure has inconsistent namespace",
-			in: &ClusterClass{
-				ObjectMeta: metav1.ObjectMeta{
-					Namespace: "default",
-				},
-				Spec: ClusterClassSpec{
-					Infrastructure: LocalObjectTemplate{Ref: ref},
-					ControlPlane: ControlPlaneClass{
-						LocalObjectTemplate:   LocalObjectTemplate{Ref: ref},
-						MachineInfrastructure: &LocalObjectTemplate{Ref: refInAnotherNamespace},
-					},
-					Workers: WorkersClass{
-						MachineDeployments: []MachineDeploymentClass{
-							{
-								Class: "aa",
-								Template: MachineDeploymentClassTemplate{
-									Bootstrap:      LocalObjectTemplate{Ref: ref},
-									Infrastructure: LocalObjectTemplate{Ref: ref},
-								},
-							},
-						},
-					},
-				},
-			},
-			expectErr: true,
-		},
-		{
-			name: "create fail if machine deployment / bootstrap has inconsistent namespace",
-			in: &ClusterClass{
-				ObjectMeta: metav1.ObjectMeta{
-					Namespace: "default",
-				},
-				Spec: ClusterClassSpec{
-					Infrastructure: LocalObjectTemplate{Ref: ref},
-					ControlPlane: ControlPlaneClass{
-						LocalObjectTemplate: LocalObjectTemplate{Ref: ref},
-					},
-					Workers: WorkersClass{
-						MachineDeployments: []MachineDeploymentClass{
-							{
-								Class: "aa",
-								Template: MachineDeploymentClassTemplate{
-									Bootstrap:      LocalObjectTemplate{Ref: refInAnotherNamespace},
-									Infrastructure: LocalObjectTemplate{Ref: ref},
-								},
-							},
-						},
-					},
-				},
-			},
-			expectErr: true,
-		},
-		{
-			name: "create fail if machine deployment / infrastructure has inconsistent namespace",
-			in: &ClusterClass{
-				ObjectMeta: metav1.ObjectMeta{
-					Namespace: "default",
-				},
-				Spec: ClusterClassSpec{
-					Infrastructure: LocalObjectTemplate{Ref: ref},
-					ControlPlane: ControlPlaneClass{
-						LocalObjectTemplate: LocalObjectTemplate{Ref: ref},
-					},
-					Workers: WorkersClass{
-						MachineDeployments: []MachineDeploymentClass{
-							{
-								Class: "aa",
-								Template: MachineDeploymentClassTemplate{
-									Bootstrap:      LocalObjectTemplate{Ref: ref},
-									Infrastructure: LocalObjectTemplate{Ref: refInAnotherNamespace},
 								},
 							},
 						},
